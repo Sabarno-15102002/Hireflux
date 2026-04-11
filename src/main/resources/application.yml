@@ -23,3 +23,14 @@ spring:
             scope:
               - email
               - profile
+
+openai:
+  api:
+    key: ${OPENAI_API_KEY}
+
+aws:
+  access-key: ${AWS_ACCESS_KEY_ID}
+  secret-key: ${AWS_SECRET_ACCESS_KEY}
+  region: ${AWS_REGION}
+  s3:
+    bucket: ${AWS_S3_BUCKET_NAME}

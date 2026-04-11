@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sabarno.hireflux.config.JwtProvider;
 import com.sabarno.hireflux.dto.RoleRequestDTO;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.exception.impl.BadRequestException;
+import com.sabarno.hireflux.exception.impl.ConflictException;
+import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.response.AuthResponse;
 import com.sabarno.hireflux.service.CustomUserService;
 import com.sabarno.hireflux.service.UserService;
@@ -53,7 +56,7 @@ public class AuthController {
 
         User existingUser = userService.findUserByEmail(email);
         if (existingUser != null) {
-            // throw new UserException("User already exists with email: " + email);
+            throw new BadRequestException("User already exists with email: " + email);
         }
 
         User newUser = new User();
@@ -130,25 +133,23 @@ public class AuthController {
             @RequestHeader("Authorization") String token,
             @RequestBody RoleRequestDTO role) {
 
-        System.out.println("Received token: " + token);
-        System.out.println("Received role: " + role.getRole());
         String email = jwtProvider.getEmailFromTempToken(token);
 
         User user = userService.findUserByEmail(email);
 
         if (user == null) {
-            throw new RuntimeException("User not found");
+            throw new ResourceNotFoundException("User not found");
         }
 
         if (user.getRole() != null) {
-            throw new RuntimeException("Role already assigned");
+            throw new ConflictException("Role already assigned");
         }
 
         UserRole selectedRole;
         try {
             selectedRole = UserRole.valueOf(role.getRole().toUpperCase());
         } catch (Exception e) {
-            throw new RuntimeException("Invalid role");
+            throw new BadRequestException("Invalid role");
         }
 
         user.setRole(selectedRole);
