@@ -1,5 +1,6 @@
 package com.sabarno.hireflux.controller;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -51,7 +52,7 @@ public class ResumeController {
             throw new BadRequestException("Only PDF files allowed");
         }
 
-        String fileKey = "resumes/" + user.getId() + "/" + UUID.randomUUID() + "_" + fileName;
+        String fileKey = "resumes"+File.separator + user.getId() + File.separator  + fileName;
 
         String uploadUrl = s3Service.generateUploadUrl(fileKey, contentType);
 

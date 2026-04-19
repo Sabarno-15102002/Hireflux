@@ -69,6 +69,14 @@ public class OpenAIService {
 
         Return ONLY valid JSON (no explanation).
 
+        Rules:
+        - Skills must be lowercase and standardized (e.g., "js" → "javascript")
+        - Remove duplicate skills
+        - Calculate total years of experience
+        - Dates must be ISO format (YYYY-MM)
+        - If missing fields, return empty strings or empty arrays
+
+
         JSON format:
         {
           "fileName": "",

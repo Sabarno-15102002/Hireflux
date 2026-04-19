@@ -1,6 +1,7 @@
 package com.sabarno.hireflux.service.impl;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,6 +21,7 @@ import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.repository.ResumeRepository;
 import com.sabarno.hireflux.service.ResumeService;
 import com.sabarno.hireflux.service.UserService;
+import com.sabarno.hireflux.service.util.EmbeddingService;
 import com.sabarno.hireflux.service.util.OpenAIService;
 import com.sabarno.hireflux.service.util.S3Service;
 import com.sabarno.hireflux.utility.ResumeUploadStatus;
@@ -35,6 +37,9 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Autowired
     private S3Service s3Service;
+
+    @Autowired
+    private EmbeddingService embeddingService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -89,9 +94,14 @@ public class ResumeServiceImpl implements ResumeService {
 
             // Step 4: AI parsing
             ResumeParsedData data = parseResumeWithAI(text);
+            String parsedDataString = objectMapper.writeValueAsString(data);
 
-            // Step 5: Save result
-            resume.setParsedData(objectMapper.writeValueAsString(data));
+            // Step 6: Create embedding
+            List<Double> embedding = embeddingService.createEmbedding(parsedDataString);
+
+            // Step 7: Save result
+            resume.setParsedData(parsedDataString);
+            resume.setEmbedding(toJson(embedding));
             resume.setUploadStatus(ResumeUploadStatus.PROCESSED);
 
         } catch (Exception e) {
@@ -129,6 +139,14 @@ public class ResumeServiceImpl implements ResumeService {
 
         } catch (Exception e) {
             throw new FileProcessingException("Failed to parse resume with AI", e);
+        }
+    }
+
+    private String toJson(List<Double> embedding) {
+        try {
+            return objectMapper.writeValueAsString(embedding);
+        } catch (Exception e) {
+            throw new BadRequestException("Error serializing embedding");
         }
     }
 

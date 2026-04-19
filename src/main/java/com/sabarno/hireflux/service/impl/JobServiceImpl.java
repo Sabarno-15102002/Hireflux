@@ -4,9 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sabarno.hireflux.dto.JobRequest;
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
@@ -17,7 +19,9 @@ import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.response.JobResponse;
 import com.sabarno.hireflux.service.JobService;
+import com.sabarno.hireflux.service.util.EmbeddingService;
 import com.sabarno.hireflux.utility.UserRole;
+
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -28,8 +32,14 @@ public class JobServiceImpl implements JobService {
     @Autowired
     private JobApplicationRepository applicationRepository;
 
+    @Autowired
+    private EmbeddingService embeddingService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Override
-    public JobResponse createJob(JobRequest request, User user) {
+    public JobResponse createJob(JobRequest request, User user) throws BadRequestException {
 
         if (user.getRole() != UserRole.RECRUITER) {
             throw new UnauthorizedException("Only recruiters can post jobs");
@@ -45,6 +55,10 @@ public class JobServiceImpl implements JobService {
         job.setCompany(user.getCompany());
         job.setPostedBy(user);
         job.setCreatedAt(LocalDateTime.now());
+
+        String jobText = buildJobText(job);
+        List<Double> embedding = embeddingService.createEmbedding(jobText);
+        job.setEmbedding(toJson(embedding));
 
         jobRepository.save(job);
 
@@ -82,7 +96,20 @@ public class JobServiceImpl implements JobService {
                 job.getId(),
                 job.getTitle(),
                 job.getCompany().getName(),
-                job.getLocation()
-        );
+                job.getLocation());
+    }
+
+    private String buildJobText(Job job) {
+        return job.getTitle() + " " +
+                job.getDescription() + " " +
+                String.join(" ", job.getRequiredSkills());
+    }
+
+    private String toJson(List<Double> embedding) throws BadRequestException {
+        try {
+            return objectMapper.writeValueAsString(embedding);
+        } catch (Exception e) {
+            throw new BadRequestException("Error serializing embedding");
+        }
     }
 }

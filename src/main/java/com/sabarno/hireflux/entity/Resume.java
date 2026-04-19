@@ -41,6 +41,10 @@ public class Resume {
     @Enumerated(EnumType.STRING)
     private ResumeUploadStatus uploadStatus;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String embedding; // store as JSON array
+
     private LocalDateTime uploadedAt;
 
     private String errorMessage;

@@ -59,5 +59,9 @@ public class Job {
     @JoinColumn(name = "company_id")
     private Company company;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String embedding;
+
     private LocalDateTime createdAt;
 }

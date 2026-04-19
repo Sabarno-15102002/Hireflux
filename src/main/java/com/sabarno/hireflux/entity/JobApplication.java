@@ -41,7 +41,9 @@ public class JobApplication {
     private Resume resume;
 
     @Enumerated(EnumType.STRING)
-    private ApplicationStatus status; 
+    private ApplicationStatus status;
+
+    private Double matchScore; 
 
     private LocalDateTime appliedAt;
 

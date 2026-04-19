@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
 
 public interface JobApplicationRepository extends JpaRepository<JobApplication, UUID> {
@@ -13,5 +14,6 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     Optional<JobApplication> findByApplicantIdAndJobId(UUID applicantId, UUID jobId);
     List<JobApplication> findByApplicantId(UUID applicantId);
     List<JobApplication> findByJobId(UUID jobId);
+    List<JobApplication> findByJobOrderByMatchScoreDesc(Job job);
 
 }
