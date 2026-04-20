@@ -5,10 +5,10 @@ import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
 
-import com.sabarno.hireflux.dto.ApplyJobRequest;
+import com.sabarno.hireflux.dto.request.ApplyJobRequest;
+import com.sabarno.hireflux.dto.response.ApplicationResponse;
 import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.User;
-import com.sabarno.hireflux.response.ApplicationResponse;
 import com.sabarno.hireflux.utility.ApplicationStatus;
 
 public interface JobApplicationService {

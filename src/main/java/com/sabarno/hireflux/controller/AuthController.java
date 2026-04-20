@@ -16,22 +16,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sabarno.hireflux.config.JwtProvider;
-import com.sabarno.hireflux.dto.RoleRequestDTO;
+import com.sabarno.hireflux.dto.request.LoginRequest;
+import com.sabarno.hireflux.dto.request.RegisterRequest;
+import com.sabarno.hireflux.dto.request.RoleRequestDTO;
+import com.sabarno.hireflux.dto.response.AuthResponse;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.ConflictException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
-import com.sabarno.hireflux.response.AuthResponse;
 import com.sabarno.hireflux.service.CustomUserService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.utility.AuthProvider;
 import com.sabarno.hireflux.utility.UserRole;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication Controller", description = "APIs for user registration, login, and role assignment")
 @Slf4j
 public class AuthController {
 
@@ -49,7 +53,7 @@ public class AuthController {
 
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns a JWT token upon successful registration")
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody User user) {
+    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody RegisterRequest user) {
         String email = user.getEmail();
         String name = user.getName();
         String password = user.getPassword();
@@ -87,7 +91,7 @@ public class AuthController {
 
     @Operation(summary = "Login a user", description = "Authenticates a user and returns a JWT token upon successful login")
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> loginUserHandler(@RequestBody User user) {
+    public ResponseEntity<AuthResponse> loginUserHandler(@RequestBody LoginRequest user) {
         String email = user.getEmail();
         String password = user.getPassword();
 

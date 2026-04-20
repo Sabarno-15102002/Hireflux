@@ -1,4 +1,4 @@
-package com.sabarno.hireflux.dto;
+package com.sabarno.hireflux.dto.request;
 
 import lombok.Data;
 

@@ -9,8 +9,9 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sabarno.hireflux.dto.ApplyJobRequest;
 import com.sabarno.hireflux.dto.ResumeParsedData;
+import com.sabarno.hireflux.dto.request.ApplyJobRequest;
+import com.sabarno.hireflux.dto.response.ApplicationResponse;
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
@@ -21,7 +22,6 @@ import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.repository.ResumeRepository;
-import com.sabarno.hireflux.response.ApplicationResponse;
 import com.sabarno.hireflux.service.JobApplicationService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.service.util.JobMatchingAlgo;

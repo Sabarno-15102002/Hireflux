@@ -6,13 +6,13 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.sabarno.hireflux.dto.CompanyRequest;
+import com.sabarno.hireflux.dto.request.CompanyRequest;
+import com.sabarno.hireflux.dto.response.CompanyResponse;
 import com.sabarno.hireflux.entity.Company;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.repository.CompanyRepository;
 import com.sabarno.hireflux.repository.UserRepository;
-import com.sabarno.hireflux.response.CompanyResponse;
 import com.sabarno.hireflux.service.CompanyService;
 import com.sabarno.hireflux.utility.UserRole;
 

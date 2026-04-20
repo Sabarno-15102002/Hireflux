@@ -8,10 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sabarno.hireflux.dto.Experience;
 import com.sabarno.hireflux.dto.ResumeParsedData;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.exception.impl.FileProcessingException;
+import com.sabarno.hireflux.utility.Experience;
 
 @Service
 public class ResumeParsedDataExtraction {

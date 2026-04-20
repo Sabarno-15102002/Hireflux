@@ -1,4 +1,4 @@
-package com.sabarno.hireflux.dto;
+package com.sabarno.hireflux.utility;
 
 import java.time.LocalDateTime;
 

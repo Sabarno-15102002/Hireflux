@@ -2,6 +2,11 @@ package com.sabarno.hireflux.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.sabarno.hireflux.utility.Education;
+import com.sabarno.hireflux.utility.Experience;
+import com.sabarno.hireflux.utility.Project;
+
 import lombok.Data;
 
 @Data

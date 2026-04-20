@@ -1,4 +1,4 @@
-package com.sabarno.hireflux.response;
+package com.sabarno.hireflux.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

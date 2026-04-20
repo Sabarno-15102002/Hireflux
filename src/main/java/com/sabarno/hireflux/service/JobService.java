@@ -5,12 +5,12 @@ import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
 
-import com.sabarno.hireflux.dto.JobRequest;
+import com.sabarno.hireflux.dto.request.JobRequest;
+import com.sabarno.hireflux.dto.response.JobResponse;
 import com.sabarno.hireflux.entity.User;
-import com.sabarno.hireflux.response.JobResponse;
 
 public interface JobService {
     JobResponse createJob(JobRequest request, User user) throws BadRequestException;
     List<JobResponse> getAllJobs();
-    void applyToJob(UUID jobId, User user);
+    JobResponse removeJob(UUID jobId, User user);
 }

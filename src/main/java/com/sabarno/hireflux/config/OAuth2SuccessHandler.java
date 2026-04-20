@@ -10,8 +10,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import com.sabarno.hireflux.dto.response.AuthResponse;
 import com.sabarno.hireflux.entity.User;
-import com.sabarno.hireflux.response.AuthResponse;
 import com.sabarno.hireflux.service.UserService;
 
 import jakarta.servlet.http.HttpServletRequest;
