@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.Resume;
+import com.sabarno.hireflux.service.SkillGraphService;
 import com.sabarno.hireflux.utility.ResumeUploadStatus;
 
 @Service
@@ -20,9 +21,13 @@ public class JobMatchingAlgo {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private SkillGraphService skillGraphService;
+
     private List<Double> fromJson(String json) throws BadRequestException {
         try {
-            return objectMapper.readValue(json, new TypeReference<List<Double>>() {});
+            return objectMapper.readValue(json, new TypeReference<List<Double>>() {
+            });
         } catch (Exception e) {
             throw new BadRequestException("Error parsing embedding");
         }
@@ -66,7 +71,8 @@ public class JobMatchingAlgo {
 
     public double experienceScore(int resumeExp, Integer minExp, Integer maxExp) {
 
-        if (minExp == null) return 1.0;
+        if (minExp == null)
+            return 1.0;
 
         if (resumeExp < minExp) {
             // penalize but don't reject
@@ -83,19 +89,23 @@ public class JobMatchingAlgo {
     public double skillScore(List<String> resumeSkills, List<String> jobSkills) {
 
         Set<String> resumeSet = new HashSet<>(resumeSkills);
-        int matched = 0;
+        Set<String> jobSet = new HashSet<>(jobSkills);
+        double bestMatch = 0;
 
-        for (String skill : jobSkills) {
-            if (resumeSet.contains(skill)) {
-                matched++;
+        for (String jobSkill : jobSet) {
+            for (String resumeSkill : resumeSet) {
+
+                double sim = skillGraphService.getSimilarity(resumeSkill,jobSkill);
+                bestMatch = Math.max(bestMatch, sim);
             }
         }
-        return (double) matched / jobSkills.size();
+        return bestMatch;
     }
 
     public double locationScore(String resumeLocation, String jobLocation) {
 
-        if (jobLocation == null) return 1.0;
+        if (jobLocation == null)
+            return 1.0;
         if (jobLocation.equalsIgnoreCase(resumeLocation)) {
             return 1.0;
         }

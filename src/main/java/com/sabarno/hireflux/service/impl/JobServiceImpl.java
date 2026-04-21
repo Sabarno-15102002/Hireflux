@@ -17,6 +17,7 @@ import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.service.JobService;
+import com.sabarno.hireflux.service.SkillGraphService;
 import com.sabarno.hireflux.service.util.EmbeddingService;
 import com.sabarno.hireflux.utility.JobStatus;
 import com.sabarno.hireflux.utility.UserRole;
@@ -33,6 +34,9 @@ public class JobServiceImpl implements JobService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private SkillGraphService skillGraphService;
 
     @Override
     public JobResponse createJob(JobRequest request, User user) throws BadRequestException {
@@ -57,6 +61,7 @@ public class JobServiceImpl implements JobService {
         job.setRequiredSkills(request.getRequiredSkills());
         job.setStatus(JobStatus.ACTIVE);
         job.setCreatedAt(LocalDateTime.now());
+        skillGraphService.updateGraph(request.getRequiredSkills());
 
         String jobText = buildJobText(job);
         List<Double> embedding = embeddingService.createEmbedding(jobText);
