@@ -48,6 +48,7 @@ public class ResumeServiceImpl implements ResumeService {
     private UserService userService;
 
     @Override
+    @Transactional
     public Resume saveParsedResume(User user, String fileKey, String fileName) {
         try {
             Optional<Resume> existing = resumeRepository.findByFileKey(fileKey);

@@ -15,12 +15,16 @@ import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
+import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.service.JobService;
 import com.sabarno.hireflux.service.SkillGraphService;
 import com.sabarno.hireflux.service.util.EmbeddingService;
+import com.sabarno.hireflux.utility.ApplicationStatus;
 import com.sabarno.hireflux.utility.JobStatus;
 import com.sabarno.hireflux.utility.UserRole;
+
+import jakarta.transaction.Transactional;
 
 
 @Service
@@ -28,6 +32,9 @@ public class JobServiceImpl implements JobService {
 
     @Autowired
     private JobRepository jobRepository;
+
+    @Autowired
+    private JobApplicationRepository applicationRepository;
 
     @Autowired
     private EmbeddingService embeddingService;
@@ -39,6 +46,7 @@ public class JobServiceImpl implements JobService {
     private SkillGraphService skillGraphService;
 
     @Override
+    @Transactional
     public JobResponse createJob(JobRequest request, User user) throws BadRequestException {
 
         if (user.getRole() != UserRole.RECRUITER) {
@@ -103,6 +111,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional
     public JobResponse removeJob(UUID jobId, User user) {
 
         Job job = jobRepository.findById(jobId)
@@ -115,6 +124,18 @@ public class JobServiceImpl implements JobService {
         job.setStatus(JobStatus.CLOSED);
         jobRepository.save(job);
 
+        applicationRepository.findByJobId(jobId)
+                .forEach(app -> {
+                    app.setStatus(ApplicationStatus.REJECTED);
+                    applicationRepository.save(app);
+                });
+
         return mapToResponse(job);
+    }
+
+    @Override
+    public Job getJobById(UUID jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
     }
 }

@@ -8,8 +8,8 @@ import com.sabarno.hireflux.entity.User;
 
 public interface ResumeService {
 
-    public Resume saveParsedResume(User user, String fileKey, String fileName);
-    public Resume getResumeForUser(User user);
-    public void processResumeAsync(UUID resumeId, String fileKey);
-    public Resume getResumeById(UUID resumeId);
+    Resume saveParsedResume(User user, String fileKey, String fileName);
+    Resume getResumeForUser(User user);
+    void processResumeAsync(UUID resumeId, String fileKey);
+    Resume getResumeById(UUID resumeId);
 }

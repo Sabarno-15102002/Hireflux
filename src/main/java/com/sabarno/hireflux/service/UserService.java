@@ -1,12 +1,17 @@
 package com.sabarno.hireflux.service;
 
+import java.util.UUID;
+
+import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.User;
 
 public interface UserService {
-    public User findUserByEmail(String email);
-    public User createOAuthUser(String email, String name, String profilePicture);
-    public User createUser(User user);
-    public User findUserFromToken(String token);
-    public User addResume(Resume resume);
+    User findUserByEmail(String email);
+    User createOAuthUser(String email, String name, String profilePicture);
+    User createUser(User user);
+    User findUserFromToken(String token);
+    User addResume(Resume resume);
+    User addApplication(JobApplication application);
+    User saveJob(UUID jobId, String token);
 }

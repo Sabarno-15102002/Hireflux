@@ -16,6 +16,7 @@ import com.sabarno.hireflux.repository.UserRepository;
 import com.sabarno.hireflux.service.CompanyService;
 import com.sabarno.hireflux.utility.UserRole;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,6 +27,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public CompanyResponse createCompany(CompanyRequest request, User user) {
 
         if (user.getRole() != UserRole.RECRUITER) {

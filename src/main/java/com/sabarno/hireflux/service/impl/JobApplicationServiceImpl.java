@@ -30,6 +30,8 @@ import com.sabarno.hireflux.utility.ApplicationStatus;
 import com.sabarno.hireflux.utility.JobStatus;
 import com.sabarno.hireflux.utility.UserRole;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class JobApplicationServiceImpl implements JobApplicationService {
 
@@ -52,6 +54,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private ResumeParsedDataExtraction dataExtraction;
 
     @Override
+    @Transactional
     public void applyToJob(UUID jobId, ApplyJobRequest request, User user) throws BadRequestException {
 
         if (user.getRole() != UserRole.CANDIDATE) {
@@ -76,7 +79,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             resume = resumeRepository.findById(request.getResumeId())
                     .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
         } else {
-            resume = user.getResume().stream()
+            resume = user.getResumes().stream()
                     .findFirst()
                     .orElseThrow(() -> new ResourceNotFoundException("No resume found"));
         }
@@ -111,10 +114,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
         applicationRepository.save(application);
 
-        if (user.getResume().stream().noneMatch(r -> r.getId().equals(resume.getId()))) {
+        if (user.getResumes().stream().noneMatch(r -> r.getId().equals(resume.getId()))) {
             // if resume is not from user profile, we need to add it to user's resume list
             userService.addResume(resume);
         }
+        userService.addApplication(application);
     }
 
     @Override
