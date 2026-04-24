@@ -5,11 +5,11 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,12 +33,18 @@ public class CompanyController {
     @Autowired
     private UserService userService;
 
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+        return userService.findUserByEmail(email);
+    }
+
     @Operation(summary = "Create a new company", description = "Creates a new company profile. Requires authentication.")
     @PostMapping
     public ResponseEntity<CompanyResponse> createCompany(
-        @RequestBody CompanyRequest request,
-        @RequestHeader("Authorization") String token) {
-        User user = userService.findUserFromToken(token);
+        @RequestBody CompanyRequest request) {
+        User user = getCurrentUser();
         return ResponseEntity.ok(companyService.createCompany(request, user));
     }
 

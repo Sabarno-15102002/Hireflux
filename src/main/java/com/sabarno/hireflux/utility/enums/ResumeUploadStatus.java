@@ -1,4 +1,4 @@
-package com.sabarno.hireflux.utility;
+package com.sabarno.hireflux.utility.enums;
 
 public enum ResumeUploadStatus {
     UPLOADED,

@@ -3,7 +3,7 @@ package com.sabarno.hireflux.dto.response;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.sabarno.hireflux.utility.ApplicationStatus;
+import com.sabarno.hireflux.utility.enums.ApplicationStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

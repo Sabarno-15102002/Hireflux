@@ -6,15 +6,25 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 import lombok.Data;
 
 @Entity
 @Data
+@Table(
+    indexes = {
+        @Index(name = "idx_company_name", columnList = "name"),
+        @Index(name = "idx_company_industry", columnList = "industry"),
+        @Index(name = "idx_company_location", columnList = "location")
+    }
+)
 public class Company {
 
     @Id
@@ -37,7 +47,7 @@ public class Company {
 
     private Integer size;
 
-    @OneToMany(mappedBy = "company")
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     private List<Job> jobs;
 
     private LocalDateTime createdAt;

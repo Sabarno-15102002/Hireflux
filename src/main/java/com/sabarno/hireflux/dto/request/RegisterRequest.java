@@ -1,6 +1,6 @@
 package com.sabarno.hireflux.dto.request;
 
-import com.sabarno.hireflux.utility.UserRole;
+import com.sabarno.hireflux.utility.enums.UserRole;
 
 import lombok.Data;
 

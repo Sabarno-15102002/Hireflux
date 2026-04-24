@@ -13,5 +13,5 @@ public interface UserService {
     User findUserFromToken(String token);
     User addResume(Resume resume);
     User addApplication(JobApplication application);
-    User saveJob(UUID jobId, String token);
+    void saveJob(UUID jobId, User user);
 }

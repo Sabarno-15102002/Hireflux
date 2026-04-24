@@ -1,17 +1,15 @@
 package com.sabarno.hireflux.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.sabarno.hireflux.dto.ResumeParsedData;
 import com.sabarno.hireflux.dto.request.ApplyJobRequest;
-import com.sabarno.hireflux.dto.response.ApplicationResponse;
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
@@ -25,12 +23,10 @@ import com.sabarno.hireflux.repository.ResumeRepository;
 import com.sabarno.hireflux.service.JobApplicationService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.service.util.JobMatchingAlgo;
-import com.sabarno.hireflux.service.util.ResumeParsedDataExtraction;
-import com.sabarno.hireflux.utility.ApplicationStatus;
-import com.sabarno.hireflux.utility.JobStatus;
-import com.sabarno.hireflux.utility.UserRole;
-
-import jakarta.transaction.Transactional;
+import com.sabarno.hireflux.utility.enums.ApplicationStatus;
+import com.sabarno.hireflux.utility.enums.JobStatus;
+import com.sabarno.hireflux.utility.enums.UserRole;
+import com.sabarno.hireflux.utility.projection.ApplicationSummary;
 
 @Service
 public class JobApplicationServiceImpl implements JobApplicationService {
@@ -50,11 +46,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Autowired
     private JobMatchingAlgo matchingAlgo;
 
-    @Autowired
-    private ResumeParsedDataExtraction dataExtraction;
-
     @Override
-    @Transactional
     public void applyToJob(UUID jobId, ApplyJobRequest request, User user) throws BadRequestException {
 
         if (user.getRole() != UserRole.CANDIDATE) {
@@ -89,58 +81,42 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             throw new UnauthorizedException("Invalid resume");
         }
 
-        ResumeParsedData parsedData = dataExtraction.getParsedData(resume);
-        List<String> skills = parsedData.getSkills() != null ? parsedData.getSkills() : new ArrayList<>();
-        int experience = dataExtraction.calculateTotalExperience(parsedData.getExperience());
-        String location = dataExtraction.extractLocation(parsedData.getExperience());
-        
-
-        double embeddingScore = matchingAlgo.calculateEmbeddingScore(resume, job);
-        double experienceScore = matchingAlgo.experienceScore(experience, job.getMinExperienceRequired(),
-                job.getMaxExperienceRequired());
-        double skillsScore = matchingAlgo.skillScore(skills, job.getRequiredSkills());
-        double locationScore = matchingAlgo.locationScore(location, job.getLocation());
-
-        // Weighted average
-        double score = embeddingScore * 0.5 + experienceScore * 0.2 + skillsScore * 0.2 + locationScore * 0.1;
-
         JobApplication application = new JobApplication();
         application.setApplicant(user);
         application.setJob(job);
         application.setResume(resume);
         application.setStatus(ApplicationStatus.APPLIED);
         application.setAppliedAt(LocalDateTime.now());
-        application.setMatchScore(score);
-
         applicationRepository.save(application);
 
         if (user.getResumes().stream().noneMatch(r -> r.getId().equals(resume.getId()))) {
             // if resume is not from user profile, we need to add it to user's resume list
             userService.addResume(resume);
         }
+
+        matchingAlgo.calculateScore(resume, job);
         userService.addApplication(application);
     }
 
     @Override
-    public List<ApplicationResponse> getMyApplications(User user) {
+    public Page<ApplicationSummary> getMyApplications(User user, Pageable pageable) {
 
-        return applicationRepository.findByApplicantId(user.getId())
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        return applicationRepository.findByApplicantId(user.getId(), pageable);
     }
 
     @Override
-    public List<ApplicationResponse> getApplicationsForJob(UUID jobId, User user) {
+    public Page<ApplicationSummary> getApplicationsForJob(UUID jobId, User user, Pageable pageable) {
 
         if (user.getRole() != UserRole.RECRUITER) {
             throw new UnauthorizedException("Only recruiters can view applicants");
         }
 
-        return applicationRepository.findByJobId(jobId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> new ResourceNotFoundException("No Job available with the id:" + jobId));
+        if(!job.getPostedBy().getId().equals(user.getId())){
+            throw new UnauthorizedException("Not allowed");
+        }
+
+        return applicationRepository.findByJobId(jobId, pageable);
     }
 
     @Override
@@ -149,9 +125,13 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         if (user.getRole() != UserRole.RECRUITER) {
             throw new UnauthorizedException("Only recruiters can update status");
         }
-
+    
         JobApplication application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+        
+        if(!application.getJob().getPostedBy().getId().equals(user.getId())){
+            throw new UnauthorizedException("Not allowed");
+        }
 
         application.setStatus(status);
         application.setUpdatedAt(LocalDateTime.now());
@@ -159,21 +139,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         applicationRepository.save(application);
     }
 
-    private ApplicationResponse mapToResponse(JobApplication app) {
-        return new ApplicationResponse(
-                app.getId(),
-                app.getJob().getId(),
-                app.getJob().getTitle(),
-                app.getJob().getCompany().getName(),
-                app.getStatus(),
-                app.getAppliedAt());
-    }
-
     @Override
-    public List<JobApplication> getRankedCandidates(UUID jobId) {
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+    public Page<ApplicationSummary> getRankedCandidates(UUID jobId, Pageable pageable) {
 
-        return applicationRepository.findByJobOrderByMatchScoreDesc(job);
+        return applicationRepository.findTopCandidates(jobId, pageable);
     }
 }

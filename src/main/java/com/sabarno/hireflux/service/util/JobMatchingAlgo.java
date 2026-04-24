@@ -1,19 +1,24 @@
 package com.sabarno.hireflux.service.util;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sabarno.hireflux.dto.ResumeParsedData;
 import com.sabarno.hireflux.entity.Job;
+import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
+import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.service.SkillGraphService;
-import com.sabarno.hireflux.utility.ResumeUploadStatus;
+import com.sabarno.hireflux.utility.enums.ResumeUploadStatus;
 
 @Service
 public class JobMatchingAlgo {
@@ -23,6 +28,15 @@ public class JobMatchingAlgo {
 
     @Autowired
     private SkillGraphService skillGraphService;
+
+    @Autowired
+    private JobMatchingAlgo matchingAlgo;
+
+    @Autowired
+    private ResumeParsedDataExtraction dataExtraction;
+
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
 
     private List<Double> fromJson(String json) throws BadRequestException {
         try {
@@ -110,5 +124,31 @@ public class JobMatchingAlgo {
             return 1.0;
         }
         return 0.7; // not same, but still possible
+    }
+
+    @Async
+    public void calculateScore(Resume resume, Job job) throws BadRequestException{
+        try {
+            JobApplication application = jobApplicationRepository.findByApplicantIdAndJobId(resume.getUser().getId(), job.getId()).orElseThrow(() -> new BadRequestException("No application found"));
+            ResumeParsedData parsedData = dataExtraction.getParsedData(resume);
+            List<String> skills = parsedData.getSkills() != null ? parsedData.getSkills() : new ArrayList<>();
+            int experience = dataExtraction.calculateTotalExperience(parsedData.getExperience());
+            String location = dataExtraction.extractLocation(parsedData.getExperience());
+            
+
+            double embeddingScore = matchingAlgo.calculateEmbeddingScore(resume, job);
+            double experienceScore = matchingAlgo.experienceScore(experience, job.getMinExperienceRequired(),
+                    job.getMaxExperienceRequired());
+            double skillsScore = matchingAlgo.skillScore(skills, job.getRequiredSkills());
+            double locationScore = matchingAlgo.locationScore(location, job.getLocation());
+
+            // Weighted average
+            double score = embeddingScore * 0.5 + experienceScore * 0.2 + skillsScore * 0.2 + locationScore * 0.1;
+            application.setMatchScore(score);
+            jobApplicationRepository.save(application);
+            
+        } catch (BadRequestException e) {
+            throw new BadRequestException("Couldn't calculate matching score");
+        }
     }
 }

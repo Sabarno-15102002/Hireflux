@@ -1,21 +1,24 @@
 package com.sabarno.hireflux.controller;
 
-import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sabarno.hireflux.dto.UploadDTO;
+import com.sabarno.hireflux.dto.response.ResumeResponse;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
@@ -26,6 +29,7 @@ import com.sabarno.hireflux.service.util.S3Service;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/resume")
@@ -41,23 +45,29 @@ public class ResumeController {
     @Autowired
     private S3Service s3Service;
 
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+        return userService.findUserByEmail(email);
+    }
+
     // ✅ 1. Generate pre-signed upload URL
     @Operation(summary = "Generate pre-signed upload URL", description = "Generates a pre-signed URL for uploading a resume file to S3. Requires authentication.")
     @PostMapping("/presign")
     public ResponseEntity<Map<String, String>> generateUploadUrl(
-            @RequestHeader("Authorization") String token,
             @RequestParam String fileName,
             @RequestParam String contentType
     ) {
 
-        User user = userService.findUserFromToken(token);
+        User user = getCurrentUser();
 
         // Optional: validate file type
         if (!"application/pdf".equals(contentType)) {
             throw new BadRequestException("Only PDF files allowed");
         }
 
-        String fileKey = "resumes"+File.separator + user.getId() + File.separator  + fileName;
+        String fileKey = "resumes/" + user.getId() + "/"  + fileName;
 
         String uploadUrl = s3Service.generateUploadUrl(fileKey, contentType);
 
@@ -65,40 +75,39 @@ public class ResumeController {
         response.put("uploadUrl", uploadUrl);
         response.put("fileKey", fileKey);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // ✅ 2. Confirm upload + trigger processing
     @Operation(summary = "Confirm resume upload and trigger processing", description = "Confirms that a resume has been uploaded to S3 and triggers asynchronous processing to extract information. Requires authentication.")
     @PostMapping("/upload")
-    public ResponseEntity<Resume> uploadResume(
-            @RequestHeader("Authorization") String token,
-            @RequestBody UploadDTO uploadDTO
+    public ResponseEntity<ResumeResponse> uploadResume(
+            @Valid @RequestBody UploadDTO uploadDTO
     ) {
 
-        User user = userService.findUserFromToken(token);
+        User user = getCurrentUser();
 
         String fileKey = uploadDTO.getFileKey();
         String fileName = uploadDTO.getFileName();
+        String safeFileName = fileName.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
 
         // Save initial record
-        Resume resume = resumeService.saveParsedResume(user, fileKey, fileName);
+        ResumeResponse resume = resumeService.saveParsedResume(user, fileKey, safeFileName);
 
         // Async processing (from S3)
         resumeService.processResumeAsync(resume.getId(), fileKey);
 
-        return ResponseEntity.ok(resume);
+        return ResponseEntity.status(HttpStatus.CREATED).body(resume);
     }
 
     // ✅ 3. Generate secure download URL
     @Operation(summary = "Generate secure download URL for resume", description = "Generates a secure pre-signed URL for downloading the user's resume from S3. Requires authentication and ownership of the resume.")
-    @GetMapping("/download-url")
+    @GetMapping("/{resumeId}/download-url")
     public ResponseEntity<Map<String, String>> getDownloadUrl(
-            @RequestHeader("Authorization") String token,
-            @RequestParam UUID resumeId
+            @PathVariable UUID resumeId
     ) {
 
-        User user = userService.findUserFromToken(token);
+        User user = getCurrentUser();
 
         Resume resume = resumeService.getResumeById(resumeId);
 
@@ -115,11 +124,9 @@ public class ResumeController {
     // ✅ 4. Get user's latest resume (optional helper)
     @Operation(summary = "Get user's latest resume", description = "Retrieves the latest resume submitted by the authenticated user. Requires authentication.")
     @GetMapping("/me")
-    public ResponseEntity<Resume> getMyResume(
-            @RequestHeader("Authorization") String token
-    ) {
-        User user = userService.findUserFromToken(token);
-        Resume resume = resumeService.getResumeForUser(user);
-        return ResponseEntity.ok(resume);
+    public ResponseEntity<List<Resume>> getUserResumes() {
+        User user = getCurrentUser();
+        List<Resume> resumes = resumeService.getResumeForUser(user);
+        return ResponseEntity.ok(resumes);
     }
 }

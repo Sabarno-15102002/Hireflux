@@ -14,7 +14,7 @@ import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.repository.CompanyRepository;
 import com.sabarno.hireflux.repository.UserRepository;
 import com.sabarno.hireflux.service.CompanyService;
-import com.sabarno.hireflux.utility.UserRole;
+import com.sabarno.hireflux.utility.enums.UserRole;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -38,8 +39,10 @@ public class SkillGraphServiceImpl implements SkillGraphService {
 
     // 🔹 Learn relationships
     @Override
+    @Async
     public void updateGraph(List<String> skills) {
 
+        if (skills == null || skills.isEmpty()) return;
         Set<String> normalized = skills.stream()
                 .map(this::normalize)
                 .collect(Collectors.toSet());

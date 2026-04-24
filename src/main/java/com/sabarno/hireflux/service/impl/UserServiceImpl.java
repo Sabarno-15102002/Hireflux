@@ -1,5 +1,6 @@
 package com.sabarno.hireflux.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,17 +10,23 @@ import com.sabarno.hireflux.config.JwtProvider;
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
+import com.sabarno.hireflux.entity.SavedJob;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
+import com.sabarno.hireflux.repository.SavedJobRepository;
 import com.sabarno.hireflux.repository.UserRepository;
 import com.sabarno.hireflux.service.JobService;
 import com.sabarno.hireflux.service.UserService;
-import com.sabarno.hireflux.utility.AuthProvider;
+import com.sabarno.hireflux.utility.enums.AuthProvider;
 
 @Service
 public class UserServiceImpl implements UserService{
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SavedJobRepository savedJobRepository;
 
     @Autowired
     private JwtProvider jwtProvider;
@@ -29,7 +36,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public User findUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("No user found with the email:" + email));
     }
 
     @Override
@@ -50,7 +57,7 @@ public class UserServiceImpl implements UserService{
     @Override
     public User findUserFromToken(String token) {
         String email = jwtProvider.getEmailFromJwtToken(token);
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("No user found with the email:" + email));
     }
 
     @Override
@@ -68,12 +75,15 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public User saveJob(UUID jobId, String token) {
-        User user = findUserFromToken(token);
+    public void saveJob(UUID jobId, User user) {
         Job job = jobService.getJobById(jobId);
 
-        user.getSavedJobs().add(job);
-        return userRepository.save(user);
+        SavedJob savedJob = new SavedJob();
+        savedJob.setUser(user);
+        savedJob.setJob(job);
+        savedJob.setSavedAt(LocalDateTime.now());
+
+        savedJobRepository.save(savedJob);
     }
 
 }

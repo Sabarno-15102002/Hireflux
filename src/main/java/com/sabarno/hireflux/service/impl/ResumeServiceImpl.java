@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sabarno.hireflux.dto.ResumeParsedData;
+import com.sabarno.hireflux.dto.response.ResumeResponse;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
@@ -24,7 +25,7 @@ import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.service.util.EmbeddingService;
 import com.sabarno.hireflux.service.util.OpenAIService;
 import com.sabarno.hireflux.service.util.S3Service;
-import com.sabarno.hireflux.utility.ResumeUploadStatus;
+import com.sabarno.hireflux.utility.enums.ResumeUploadStatus;
 
 @Service
 public class ResumeServiceImpl implements ResumeService {
@@ -49,12 +50,12 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Override
     @Transactional
-    public Resume saveParsedResume(User user, String fileKey, String fileName) {
+    public ResumeResponse saveParsedResume(User user, String fileKey, String fileName) {
         try {
             Optional<Resume> existing = resumeRepository.findByFileKey(fileKey);
 
             if (existing.isPresent()) {
-                return existing.get(); // ✅ idempotent return
+                return mapToResponse(existing.get()); // ✅ idempotent return
             }
             Resume resume = new Resume();
             resume.setUser(user);
@@ -63,16 +64,26 @@ public class ResumeServiceImpl implements ResumeService {
             resume.setUploadStatus(ResumeUploadStatus.UPLOADED);
 
             userService.addResume(resume);
-            return resumeRepository.save(resume);
+            return mapToResponse(resumeRepository.save(resume));
         } catch (Exception e) {
             throw new FileProcessingException("Failed to save resume", e);
         }
 
     }
 
+    private ResumeResponse mapToResponse(Resume resume){
+        ResumeResponse response = new ResumeResponse();
+        response.setId(resume.getId());
+        response.setFileName(resume.getFileName());
+        response.setUploadStatus(resume.getUploadStatus());
+        response.setUploadedAt(resume.getUploadedAt());
+        
+        return response;
+    }
+
     @Override
-    public Resume getResumeForUser(User user) {
-        return resumeRepository.findByUser(user);
+    public List<Resume> getResumeForUser(User user) {
+        return resumeRepository.findByUserId(user.getId());
     }
 
     @Override

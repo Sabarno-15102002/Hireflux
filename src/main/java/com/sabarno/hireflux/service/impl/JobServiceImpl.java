@@ -1,14 +1,14 @@
 package com.sabarno.hireflux.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sabarno.hireflux.dto.request.JobRequest;
 import com.sabarno.hireflux.dto.response.JobResponse;
 import com.sabarno.hireflux.entity.Job;
@@ -19,10 +19,10 @@ import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.service.JobService;
 import com.sabarno.hireflux.service.SkillGraphService;
-import com.sabarno.hireflux.service.util.EmbeddingService;
-import com.sabarno.hireflux.utility.ApplicationStatus;
-import com.sabarno.hireflux.utility.JobStatus;
-import com.sabarno.hireflux.utility.UserRole;
+import com.sabarno.hireflux.service.util.EmbeddingAsyncService;
+import com.sabarno.hireflux.utility.enums.JobStatus;
+import com.sabarno.hireflux.utility.enums.UserRole;
+import com.sabarno.hireflux.utility.projection.JobSummary;
 
 import jakarta.transaction.Transactional;
 
@@ -37,16 +37,12 @@ public class JobServiceImpl implements JobService {
     private JobApplicationRepository applicationRepository;
 
     @Autowired
-    private EmbeddingService embeddingService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private EmbeddingAsyncService embeddingAsyncService;
 
     @Autowired
     private SkillGraphService skillGraphService;
 
     @Override
-    @Transactional
     public JobResponse createJob(JobRequest request, User user) throws BadRequestException {
 
         if (user.getRole() != UserRole.RECRUITER) {
@@ -57,6 +53,17 @@ public class JobServiceImpl implements JobService {
             throw new UnauthorizedException("Recruiter must belong to a company");
         }
 
+        Job job = createJobUtil(request, user);
+        skillGraphService.updateGraph(request.getRequiredSkills());
+
+        String jobText = buildJobText(job);
+        embeddingAsyncService.generateAndSaveEmbedding(job.getId(), jobText);
+
+        return mapToResponse(job);
+    }
+
+    @Transactional
+    public Job createJobUtil(JobRequest request, User user){
         Job job = new Job();
         job.setTitle(request.getTitle());
         job.setDescription(request.getDescription());
@@ -69,23 +76,12 @@ public class JobServiceImpl implements JobService {
         job.setRequiredSkills(request.getRequiredSkills());
         job.setStatus(JobStatus.ACTIVE);
         job.setCreatedAt(LocalDateTime.now());
-        skillGraphService.updateGraph(request.getRequiredSkills());
-
-        String jobText = buildJobText(job);
-        List<Double> embedding = embeddingService.createEmbedding(jobText);
-        job.setEmbedding(toJson(embedding));
-
-        jobRepository.save(job);
-
-        return mapToResponse(job);
+        return jobRepository.save(job);
     }
 
     @Override
-    public List<JobResponse> getAllJobs() {
-        return jobRepository.findAll()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+    public Page<JobSummary> getAllJobs(Pageable pageable) {
+        return jobRepository.findByStatus(JobStatus.ACTIVE, pageable);
     }
 
     private JobResponse mapToResponse(Job job) {
@@ -97,17 +93,12 @@ public class JobServiceImpl implements JobService {
     }
 
     private String buildJobText(Job job) {
+        String skillString =  job.getRequiredSkills() != null 
+        ? String.join(" ", job.getRequiredSkills()) 
+        : "";
         return job.getTitle() + " " +
-                job.getDescription() + " " +
-                String.join(" ", job.getRequiredSkills());
-    }
-
-    private String toJson(List<Double> embedding) throws BadRequestException {
-        try {
-            return objectMapper.writeValueAsString(embedding);
-        } catch (Exception e) {
-            throw new BadRequestException("Error serializing embedding");
-        }
+                job.getDescription() + " "+
+                skillString;
     }
 
     @Override
@@ -124,11 +115,7 @@ public class JobServiceImpl implements JobService {
         job.setStatus(JobStatus.CLOSED);
         jobRepository.save(job);
 
-        applicationRepository.findByJobId(jobId)
-                .forEach(app -> {
-                    app.setStatus(ApplicationStatus.REJECTED);
-                    applicationRepository.save(app);
-                });
+        applicationRepository.rejectAllByJobId(jobId);
 
         return mapToResponse(job);
     }

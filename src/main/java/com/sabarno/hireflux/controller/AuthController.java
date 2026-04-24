@@ -26,8 +26,8 @@ import com.sabarno.hireflux.exception.impl.ConflictException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.service.CustomUserService;
 import com.sabarno.hireflux.service.UserService;
-import com.sabarno.hireflux.utility.AuthProvider;
-import com.sabarno.hireflux.utility.UserRole;
+import com.sabarno.hireflux.utility.enums.AuthProvider;
+import com.sabarno.hireflux.utility.enums.UserRole;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
