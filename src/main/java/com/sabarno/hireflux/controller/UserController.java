@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sabarno.hireflux.dto.response.AppResponse;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.service.UserService;
+import com.sabarno.hireflux.utility.projection.UserSummary;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,5 +45,12 @@ public class UserController {
         AppResponse res = new AppResponse();
         res.setMessage("Saved the job successfully");
         return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserSummary> getProfile(){
+        User user = getCurrentUser();
+        UserSummary profile = userService.getProfile(user.getId());
+        return ResponseEntity.ok(profile);
     }
 }

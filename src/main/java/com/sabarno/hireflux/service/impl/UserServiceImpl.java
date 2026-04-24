@@ -18,6 +18,7 @@ import com.sabarno.hireflux.repository.UserRepository;
 import com.sabarno.hireflux.service.JobService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.utility.enums.AuthProvider;
+import com.sabarno.hireflux.utility.projection.UserSummary;
 
 @Service
 public class UserServiceImpl implements UserService{
@@ -84,6 +85,11 @@ public class UserServiceImpl implements UserService{
         savedJob.setSavedAt(LocalDateTime.now());
 
         savedJobRepository.save(savedJob);
+    }
+
+    @Override
+    public UserSummary getProfile(UUID userId) {
+        return userRepository.findProfileById(userId).orElseThrow(() -> new ResourceNotFoundException("No User found"));
     }
 
 }
