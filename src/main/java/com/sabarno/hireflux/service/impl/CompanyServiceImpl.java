@@ -18,9 +18,11 @@ import com.sabarno.hireflux.utility.enums.UserRole;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
@@ -45,6 +47,7 @@ public class CompanyServiceImpl implements CompanyService {
         user.setCompany(company);
         userRepository.save(user);
 
+        log.info("event=create_company, company_id={}, user_id={}", company.getId(), user.getId());
         return mapToResponse(company);
     }
 

@@ -27,6 +27,8 @@ import com.sabarno.hireflux.service.ResumeService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.service.util.S3Service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -44,6 +46,9 @@ public class ResumeController {
 
     @Autowired
     private S3Service s3Service;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
@@ -84,7 +89,7 @@ public class ResumeController {
     public ResponseEntity<ResumeResponse> uploadResume(
             @Valid @RequestBody UploadDTO uploadDTO
     ) {
-
+        Timer.Sample sample = Timer.start(meterRegistry);
         User user = getCurrentUser();
 
         String fileKey = uploadDTO.getFileKey();
@@ -96,6 +101,7 @@ public class ResumeController {
 
         // Async processing (from S3)
         resumeService.processResumeAsync(resume.getId(), fileKey);
+        sample.stop(meterRegistry.timer("resume.processing.time"));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(resume);
     }

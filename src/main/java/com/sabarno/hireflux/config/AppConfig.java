@@ -39,7 +39,7 @@ public class AppConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(Authorize -> Authorize
+                .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
@@ -48,11 +48,13 @@ public class AppConfig {
                         .permitAll()
                         .requestMatchers(SWAGGER_WHITELIST)
                         .permitAll()
+                        .requestMatchers("/actuator/prometheus").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/recruiter/**").hasRole("RECRUITER")
                         .requestMatchers("/api/candidate/**").hasRole("CANDIDATE")
                         .anyRequest().authenticated())
-                .addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)
+                        .addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)
+                        .addFilterBefore(requestLoggingFilter(), JwtTokenValidator.class)
                 .oauth2Login(oauth -> oauth
                         .successHandler(oAuth2SuccessHandler)
                         .failureHandler((request, response, exception) -> {
@@ -87,5 +89,10 @@ public class AppConfig {
     @Bean
     ObjectMapper objectMapper() {
         return new ObjectMapper();
+    }
+
+    @Bean
+    RequestLoggingFilter requestLoggingFilter() {
+        return new RequestLoggingFilter();
     }
 }

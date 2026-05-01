@@ -20,7 +20,10 @@ import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.service.SkillGraphService;
 import com.sabarno.hireflux.utility.enums.ResumeUploadStatus;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class JobMatchingAlgo {
 
     @Autowired
@@ -28,9 +31,6 @@ public class JobMatchingAlgo {
 
     @Autowired
     private SkillGraphService skillGraphService;
-
-    @Autowired
-    private JobMatchingAlgo matchingAlgo;
 
     @Autowired
     private ResumeParsedDataExtraction dataExtraction;
@@ -136,15 +136,16 @@ public class JobMatchingAlgo {
             String location = dataExtraction.extractLocation(parsedData.getExperience());
             
 
-            double embeddingScore = matchingAlgo.calculateEmbeddingScore(resume, job);
-            double experienceScore = matchingAlgo.experienceScore(experience, job.getMinExperienceRequired(),
+            double embeddingScore = calculateEmbeddingScore(resume, job);
+            double experienceScore = experienceScore(experience, job.getMinExperienceRequired(),
                     job.getMaxExperienceRequired());
-            double skillsScore = matchingAlgo.skillScore(skills, job.getRequiredSkills());
-            double locationScore = matchingAlgo.locationScore(location, job.getLocation());
+            double skillsScore = skillScore(skills, job.getRequiredSkills());
+            double locationScore = locationScore(location, job.getLocation());
 
             // Weighted average
             double score = embeddingScore * 0.5 + experienceScore * 0.2 + skillsScore * 0.2 + locationScore * 0.1;
             application.setMatchScore(score);
+            log.info("event=calculate_score, application_id={}, score={}", application.getId(), score);
             jobApplicationRepository.save(application);
             
         } catch (BadRequestException e) {

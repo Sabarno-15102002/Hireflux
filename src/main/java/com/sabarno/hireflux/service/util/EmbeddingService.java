@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,10 +13,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 @Service
 public class EmbeddingService {
 
     private static final String MODEL = "text-embedding-3-small";
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @Value("${openai.api.key}")
     private String apiKey;
@@ -31,7 +37,7 @@ public class EmbeddingService {
                 "model", MODEL,
                 "input", text
         );
-
+        
         return webClient.post()
                 .uri("/embeddings")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
@@ -44,6 +50,7 @@ public class EmbeddingService {
                     node.forEach(n -> vector.add(n.asDouble()));
                     return vector;
                 })
+                .doOnError(e -> meterRegistry.counter("embedding.failures").increment())
                 .block();
     }
 }

@@ -13,6 +13,7 @@ import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.SavedJob;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
+import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.repository.SavedJobRepository;
 import com.sabarno.hireflux.repository.UserRepository;
 import com.sabarno.hireflux.service.JobService;
@@ -33,7 +34,7 @@ public class UserServiceImpl implements UserService{
     private JwtProvider jwtProvider;
 
     @Autowired
-    private JobService jobService;
+    private JobRepository jobRepository;
 
     @Override
     public User findUserByEmail(String email) {
@@ -77,7 +78,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public void saveJob(UUID jobId, User user) {
-        Job job = jobService.getJobById(jobId);
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> new ResourceNotFoundException("No job found with the ID:" + jobId));
 
         SavedJob savedJob = new SavedJob();
         savedJob.setUser(user);

@@ -28,7 +28,12 @@ import com.sabarno.hireflux.utility.enums.JobStatus;
 import com.sabarno.hireflux.utility.enums.UserRole;
 import com.sabarno.hireflux.utility.projection.ApplicationSummary;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class JobApplicationServiceImpl implements JobApplicationService {
 
     @Autowired
@@ -46,9 +51,13 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Autowired
     private JobMatchingAlgo matchingAlgo;
 
+    @Autowired
+    private MeterRegistry meterRegistry;
+
     @Override
     public void applyToJob(UUID jobId, ApplyJobRequest request, User user) throws BadRequestException {
 
+        Timer.Sample sample = Timer.start(meterRegistry);
         if (user.getRole() != UserRole.CANDIDATE) {
             throw new UnauthorizedException("Only candidates can apply");
         }
@@ -93,9 +102,15 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             // if resume is not from user profile, we need to add it to user's resume list
             userService.addResume(resume);
         }
+        log.info("event=apply_job, job_id={}, user_id={}", jobId, user.getId());
 
         matchingAlgo.calculateScore(resume, job);
         userService.addApplication(application);
+        sample.stop(Timer.builder("job.apply.latency")
+            .publishPercentiles(0.5, 0.9, 0.99)
+            .register(meterRegistry));
+
+        meterRegistry.counter("applications.submitted").increment();
     }
 
     @Override
@@ -135,6 +150,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
         application.setStatus(status);
         application.setUpdatedAt(LocalDateTime.now());
+        log.info("event=update_application_status, application_id={}, new_status={}, updated_by={}", applicationId, status, user.getId());
 
         applicationRepository.save(application);
     }

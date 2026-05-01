@@ -24,10 +24,13 @@ import com.sabarno.hireflux.utility.enums.JobStatus;
 import com.sabarno.hireflux.utility.enums.UserRole;
 import com.sabarno.hireflux.utility.projection.JobSummary;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 
 @Service
+@Slf4j
 public class JobServiceImpl implements JobService {
 
     @Autowired
@@ -41,6 +44,9 @@ public class JobServiceImpl implements JobService {
 
     @Autowired
     private SkillGraphService skillGraphService;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @Override
     public JobResponse createJob(JobRequest request, User user) throws BadRequestException {
@@ -76,6 +82,8 @@ public class JobServiceImpl implements JobService {
         job.setRequiredSkills(request.getRequiredSkills());
         job.setStatus(JobStatus.ACTIVE);
         job.setCreatedAt(LocalDateTime.now());
+        meterRegistry.counter("jobs.created").increment();
+        log.info("event=create_job, job_id={}, posted_by={}", job.getId(), user.getId());
         return jobRepository.save(job);
     }
 
@@ -117,6 +125,7 @@ public class JobServiceImpl implements JobService {
 
         applicationRepository.rejectAllByJobId(jobId);
 
+        log.info("event=remove_job, job_id={}, removed_by={}", job.getId(), user.getId());
         return mapToResponse(job);
     }
 

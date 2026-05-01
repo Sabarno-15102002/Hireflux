@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.repository.JobRepository;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -26,8 +28,12 @@ public class EmbeddingAsyncService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private MeterRegistry meterRegistry;
+
     @Async
     public void generateAndSaveEmbedding(UUID jobId, String jobText) {
+        Timer.Sample sample = Timer.start(meterRegistry);
         try {
             List<Double> embedding = embeddingService.createEmbedding(jobText);
 
@@ -41,6 +47,9 @@ public class EmbeddingAsyncService {
         } catch (BadRequestException e) {
             // log properly (don’t fail user flow)
             log.error("Embedding generation failed for jobId: {}", jobId, e);
+        }
+        finally {
+            sample.stop(meterRegistry.timer("embedding.generation.time"));
         }
     }
 

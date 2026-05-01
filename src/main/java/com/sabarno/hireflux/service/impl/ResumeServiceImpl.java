@@ -27,7 +27,11 @@ import com.sabarno.hireflux.service.util.OpenAIService;
 import com.sabarno.hireflux.service.util.S3Service;
 import com.sabarno.hireflux.utility.enums.ResumeUploadStatus;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ResumeServiceImpl implements ResumeService {
 
     @Autowired
@@ -48,6 +52,9 @@ public class ResumeServiceImpl implements ResumeService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private MeterRegistry meterRegistry;
+
     @Override
     @Transactional
     public ResumeResponse saveParsedResume(User user, String fileKey, String fileName) {
@@ -64,6 +71,8 @@ public class ResumeServiceImpl implements ResumeService {
             resume.setUploadStatus(ResumeUploadStatus.UPLOADED);
 
             userService.addResume(resume);
+            meterRegistry.counter("resume.uploaded").increment();
+            log.info("event=save_parsed_resume, resume_id={}, user_id={}", resume.getId(), user.getId());
             return mapToResponse(resumeRepository.save(resume));
         } catch (Exception e) {
             throw new FileProcessingException("Failed to save resume", e);
@@ -77,7 +86,7 @@ public class ResumeServiceImpl implements ResumeService {
         response.setFileName(resume.getFileName());
         response.setUploadStatus(resume.getUploadStatus());
         response.setUploadedAt(resume.getUploadedAt());
-        
+        log.info("event=map_to_response, resume_id={}, user_id={}", resume.getId(), resume.getUser().getId());
         return response;
     }
 
@@ -124,6 +133,7 @@ public class ResumeServiceImpl implements ResumeService {
             );
         } finally {
             resumeRepository.save(resume);
+            log.info("event=process_resume, resume_id={}, status={}", resume.getId(), resume.getUploadStatus());
         }
     }
 
