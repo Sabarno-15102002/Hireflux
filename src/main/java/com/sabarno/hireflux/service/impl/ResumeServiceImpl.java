@@ -7,6 +7,9 @@ import java.util.UUID;
 
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +58,9 @@ public class ResumeServiceImpl implements ResumeService {
     @Autowired
     private MeterRegistry meterRegistry;
 
+    @Caching(evict = {
+        @CacheEvict(value = "user_resumes", key = "#user.id")
+    })
     @Override
     @Transactional
     public ResumeResponse saveParsedResume(User user, String fileKey, String fileName) {
@@ -90,11 +96,13 @@ public class ResumeServiceImpl implements ResumeService {
         return response;
     }
 
+    @Cacheable(value = "user_resumes", key = "#user.id")
     @Override
     public List<Resume> getResumeForUser(User user) {
         return resumeRepository.findByUserId(user.getId());
     }
 
+    @CacheEvict(value = "resume", key = "#resumeId")
     @Override
     @Transactional
     @Async

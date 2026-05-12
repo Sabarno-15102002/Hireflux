@@ -5,6 +5,9 @@ import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,7 +31,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
-
 @Service
 @Slf4j
 public class JobServiceImpl implements JobService {
@@ -48,6 +50,7 @@ public class JobServiceImpl implements JobService {
     @Autowired
     private MeterRegistry meterRegistry;
 
+    @CacheEvict(value = "jobs", allEntries = true)
     @Override
     public JobResponse createJob(JobRequest request, User user) throws BadRequestException {
 
@@ -87,6 +90,7 @@ public class JobServiceImpl implements JobService {
         return jobRepository.save(job);
     }
 
+    @Cacheable(value = "jobs", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
     @Override
     public Page<JobSummary> getAllJobs(Pageable pageable) {
         return jobRepository.findByStatus(JobStatus.ACTIVE, pageable);
@@ -101,13 +105,18 @@ public class JobServiceImpl implements JobService {
     }
 
     private String buildJobText(Job job) {
-        String skillString =  job.getRequiredSkills() != null 
-        ? String.join(" ", job.getRequiredSkills()) 
-        : "";
+        String skillString = job.getRequiredSkills() != null
+                ? String.join(" ", job.getRequiredSkills())
+                : "";
         return job.getTitle() + " " +
-                job.getDescription() + " "+
+                job.getDescription() + " " +
                 skillString;
     }
+
+    @Caching(evict = {
+            @CacheEvict(value = "job", key = "#jobId"),
+            @CacheEvict(value = "jobs", allEntries = true)
+    })
 
     @Override
     @Transactional
@@ -129,6 +138,7 @@ public class JobServiceImpl implements JobService {
         return mapToResponse(job);
     }
 
+    @Cacheable(value = "job", key = "#jobId")
     @Override
     public Job getJobById(UUID jobId) {
         return jobRepository.findById(jobId)

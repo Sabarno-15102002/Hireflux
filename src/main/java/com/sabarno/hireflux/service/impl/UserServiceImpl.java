@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.config.JwtProvider;
@@ -16,7 +18,6 @@ import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.repository.SavedJobRepository;
 import com.sabarno.hireflux.repository.UserRepository;
-import com.sabarno.hireflux.service.JobService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.utility.enums.AuthProvider;
 import com.sabarno.hireflux.utility.projection.UserSummary;
@@ -36,11 +37,13 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private JobRepository jobRepository;
 
+    @Cacheable(value = "users", key = "#email")
     @Override
     public User findUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("No user found with the email:" + email));
     }
 
+    @CachePut(value = "users", key = "#email")
     @Override
     public User createOAuthUser(String email, String name, String profilePicture) {
         User user = new User();
@@ -51,6 +54,7 @@ public class UserServiceImpl implements UserService{
         return userRepository.save(user);
     }
 
+    @CachePut(value = "users", key = "#user.email")
     @Override
     public User createUser(User user) {
         return userRepository.save(user);
@@ -88,6 +92,7 @@ public class UserServiceImpl implements UserService{
         savedJobRepository.save(savedJob);
     }
 
+    @Cacheable(value = "users", key = "#userId")
     @Override
     public UserSummary getProfile(UUID userId) {
         return userRepository.findProfileById(userId).orElseThrow(() -> new ResourceNotFoundException("No User found"));

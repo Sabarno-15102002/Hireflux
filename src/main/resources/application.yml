@@ -23,6 +23,16 @@ spring:
             scope:
               - email
               - profile
+  cache:
+    type: redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 
 management:
   endpoints:
