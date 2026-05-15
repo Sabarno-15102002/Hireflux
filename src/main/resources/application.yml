@@ -33,7 +33,18 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
-
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: hireflux-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.sabarno.hireflux.*"
 management:
   endpoints:
     web:
@@ -60,3 +71,10 @@ aws:
   region: ${AWS_REGION}
   s3:
     bucket: ${AWS_S3_BUCKET_NAME}
+
+kafka:
+  topic:
+    resume-uploaded: 
+      name: resume-uploaded
+    resume-uploaded-dlt:
+      name: resume-uploaded-dlt

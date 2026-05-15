@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,12 +104,17 @@ public class ResumeServiceImpl implements ResumeService {
     @CacheEvict(value = "resume", key = "#resumeId")
     @Override
     @Transactional
-    @Async
-    public void processResumeAsync(UUID resumeId, String fileKey) {
+    public void processResume(UUID resumeId, String fileKey) {
 
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
+
+        // idempotency protection
+        if (resume.getUploadStatus() == ResumeUploadStatus.PROCESSED) {
+            return;
+        }
         try {
+            log.info("event=process_resume_started, resume_id={}, user_id={}", resume.getId(), resume.getUser().getId());
             // Step 1: PROCESSING
             resume.setUploadStatus(ResumeUploadStatus.PROCESSING);
             resumeRepository.save(resume);
@@ -132,6 +136,8 @@ public class ResumeServiceImpl implements ResumeService {
             resume.setParsedData(parsedDataString);
             resume.setEmbedding(toJson(embedding));
             resume.setUploadStatus(ResumeUploadStatus.PROCESSED);
+            resume.setErrorMessage(null);
+            log.info("event=process_resume_completed, resume_id={}, user_id={}", resume.getId(), resume.getUser().getId());
 
         } catch (Exception e) {
             // Step 5: Handle failure
@@ -139,6 +145,8 @@ public class ResumeServiceImpl implements ResumeService {
             resume.setErrorMessage(
                 e.getClass().getSimpleName() + ": " + e.getMessage()
             );
+            log.error("event=process_resume_failed, resume_id={}, user_id={}", resume.getId(), resume.getUser().getId(), e);
+            throw new FileProcessingException("Failed to process resume", e);
         } finally {
             resumeRepository.save(resume);
             log.info("event=process_resume, resume_id={}, status={}", resume.getId(), resume.getUploadStatus());

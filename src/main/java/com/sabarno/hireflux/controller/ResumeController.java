@@ -21,6 +21,7 @@ import com.sabarno.hireflux.dto.UploadDTO;
 import com.sabarno.hireflux.dto.response.ResumeResponse;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.event.ResumeEventProducer;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.service.ResumeService;
@@ -49,6 +50,9 @@ public class ResumeController {
 
     @Autowired
     private MeterRegistry meterRegistry;
+
+    @Autowired
+    private ResumeEventProducer resumeEventProducer;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
@@ -100,9 +104,8 @@ public class ResumeController {
         ResumeResponse resume = resumeService.saveParsedResume(user, fileKey, safeFileName);
 
         // Async processing (from S3)
-        resumeService.processResumeAsync(resume.getId(), fileKey);
+        resumeEventProducer.publishResumeUploaded(resume.getId(), fileKey);
         sample.stop(meterRegistry.timer("resume.processing.time"));
-
         return ResponseEntity.status(HttpStatus.CREATED).body(resume);
     }
 

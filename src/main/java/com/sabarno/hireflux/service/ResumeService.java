@@ -12,6 +12,6 @@ public interface ResumeService {
 
     ResumeResponse saveParsedResume(User user, String fileKey, String fileName);
     List<Resume> getResumeForUser(User user);
-    void processResumeAsync(UUID resumeId, String fileKey);
+    void processResume(UUID resumeId, String fileKey);
     Resume getResumeById(UUID resumeId);
 }
