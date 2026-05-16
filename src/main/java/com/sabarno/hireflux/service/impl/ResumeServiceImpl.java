@@ -14,10 +14,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.sabarno.hireflux.dto.ResumeParsedData;
 import com.sabarno.hireflux.dto.response.ResumeResponse;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.exception.NonRetryableProcessingException;
+import com.sabarno.hireflux.exception.RetryableProcessingException;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.FileProcessingException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
@@ -31,10 +34,13 @@ import com.sabarno.hireflux.utility.enums.ResumeUploadStatus;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 @Service
 @Slf4j
 public class ResumeServiceImpl implements ResumeService {
+
+    private static final String PROCESS_RESUME_FAILED_LOG = "event=process_resume_failed, resume_id={}, user_id={}";
 
     @Autowired
     private ResumeRepository resumeRepository;
@@ -58,7 +64,7 @@ public class ResumeServiceImpl implements ResumeService {
     private MeterRegistry meterRegistry;
 
     @Caching(evict = {
-        @CacheEvict(value = "user_resumes", key = "#user.id")
+            @CacheEvict(value = "user_resumes", key = "#user.id")
     })
     @Override
     @Transactional
@@ -85,7 +91,7 @@ public class ResumeServiceImpl implements ResumeService {
 
     }
 
-    private ResumeResponse mapToResponse(Resume resume){
+    private ResumeResponse mapToResponse(Resume resume) {
         ResumeResponse response = new ResumeResponse();
         response.setId(resume.getId());
         response.setFileName(resume.getFileName());
@@ -107,23 +113,26 @@ public class ResumeServiceImpl implements ResumeService {
     public void processResume(UUID resumeId, String fileKey) {
 
         Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
+                .orElseThrow(() -> new NonRetryableProcessingException("Resume not found"));
 
         // idempotency protection
         if (resume.getUploadStatus() == ResumeUploadStatus.PROCESSED) {
             return;
         }
         try {
-            log.info("event=process_resume_started, resume_id={}, user_id={}", resume.getId(), resume.getUser().getId());
+            log.info("event=process_resume_started, resume_id={}, user_id={}", resume.getId(),
+                    resume.getUser().getId());
             // Step 1: PROCESSING
             resume.setUploadStatus(ResumeUploadStatus.PROCESSING);
             resumeRepository.save(resume);
 
+            String text;
             // Step 2: Download file from S3
-            InputStream inputStream = s3Service.getObject(fileKey);
+            try(InputStream inputStream = s3Service.getObject(fileKey)) {
 
-            // Step 3: Extract text
-            String text = extractText(inputStream);
+                // Step 3: Extract text
+                text = extractText(inputStream);
+            }
 
             // Step 4: AI parsing
             ResumeParsedData data = parseResumeWithAI(text);
@@ -137,15 +146,40 @@ public class ResumeServiceImpl implements ResumeService {
             resume.setEmbedding(toJson(embedding));
             resume.setUploadStatus(ResumeUploadStatus.PROCESSED);
             resume.setErrorMessage(null);
-            log.info("event=process_resume_completed, resume_id={}, user_id={}", resume.getId(), resume.getUser().getId());
+            log.info("event=process_resume_completed, resume_id={}, user_id={}", resume.getId(),
+                    resume.getUser().getId());
+
+        } catch (SdkClientException e) {
+
+            // AWS temporary issue
+            resume.setUploadStatus(ResumeUploadStatus.FAILED);
+            resume.setErrorMessage(
+                    e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.error(PROCESS_RESUME_FAILED_LOG, resume.getId(), resume.getUser().getId(),
+                    e);
+            throw new RetryableProcessingException(
+                    "S3 temporary unavailable",
+                    e);
+
+        } catch (InvalidFormatException e) {
+
+            // corrupted file
+            resume.setUploadStatus(ResumeUploadStatus.FAILED);
+            resume.setErrorMessage(
+                    e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.error(PROCESS_RESUME_FAILED_LOG, resume.getId(), resume.getUser().getId(),
+                    e);
+            throw new NonRetryableProcessingException(
+                    "Invalid resume format",
+                    e);
 
         } catch (Exception e) {
             // Step 5: Handle failure
             resume.setUploadStatus(ResumeUploadStatus.FAILED);
             resume.setErrorMessage(
-                e.getClass().getSimpleName() + ": " + e.getMessage()
-            );
-            log.error("event=process_resume_failed, resume_id={}, user_id={}", resume.getId(), resume.getUser().getId(), e);
+                    e.getClass().getSimpleName() + ": " + e.getMessage());
+            log.error(PROCESS_RESUME_FAILED_LOG, resume.getId(), resume.getUser().getId(),
+                    e);
             throw new FileProcessingException("Failed to process resume", e);
         } finally {
             resumeRepository.save(resume);
@@ -159,7 +193,7 @@ public class ResumeServiceImpl implements ResumeService {
             String text = tika.parseToString(inputStream);
 
             if (text == null || text.isBlank()) {
-                throw new BadRequestException("Empty resume content");
+                throw new NonRetryableProcessingException("Extracted resume content is empty");
             }
 
             return text;

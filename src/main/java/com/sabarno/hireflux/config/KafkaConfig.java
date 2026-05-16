@@ -10,6 +10,8 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.retrytopic.RetryTopicConfiguration;
 import org.springframework.kafka.retrytopic.RetryTopicConfigurationBuilder;
 
+import com.sabarno.hireflux.exception.NonRetryableProcessingException;
+
 
 @Configuration
 public class KafkaConfig {
@@ -58,6 +60,7 @@ public class KafkaConfig {
                     10000   // max delay
             )
             .dltSuffix("-dlt")
+            .notRetryOn(NonRetryableProcessingException.class)
             .create(kafkaTemplate);
     }
 }
