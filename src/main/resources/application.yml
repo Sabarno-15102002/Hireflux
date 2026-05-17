@@ -45,6 +45,8 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.sabarno.hireflux.*"
+  elasticsearch:
+    uris: localhost:9200
 management:
   endpoints:
     web:

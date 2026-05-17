@@ -22,6 +22,7 @@ import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.service.JobService;
 import com.sabarno.hireflux.service.SkillGraphService;
+import com.sabarno.hireflux.service.impl.es.JobIndexService;
 import com.sabarno.hireflux.service.util.EmbeddingAsyncService;
 import com.sabarno.hireflux.utility.enums.JobStatus;
 import com.sabarno.hireflux.utility.enums.UserRole;
@@ -50,6 +51,9 @@ public class JobServiceImpl implements JobService {
     @Autowired
     private MeterRegistry meterRegistry;
 
+    @Autowired
+    private JobIndexService jobIndexService;
+
     @CacheEvict(value = "jobs", allEntries = true)
     @Override
     public JobResponse createJob(JobRequest request, User user) throws BadRequestException {
@@ -67,7 +71,8 @@ public class JobServiceImpl implements JobService {
 
         String jobText = buildJobText(job);
         embeddingAsyncService.generateAndSaveEmbedding(job.getId(), jobText);
-
+        jobIndexService.indexJob(job);
+        
         return mapToResponse(job);
     }
 
@@ -132,6 +137,7 @@ public class JobServiceImpl implements JobService {
         job.setStatus(JobStatus.CLOSED);
         jobRepository.save(job);
 
+        jobIndexService.deleteJob(jobId);
         applicationRepository.rejectAllByJobId(jobId);
 
         log.info("event=remove_job, job_id={}, removed_by={}", job.getId(), user.getId());

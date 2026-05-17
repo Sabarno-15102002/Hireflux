@@ -1,10 +1,12 @@
 package com.sabarno.hireflux.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -19,10 +21,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sabarno.hireflux.dto.request.JobRequest;
+import com.sabarno.hireflux.dto.request.JobSearchRequest;
 import com.sabarno.hireflux.dto.response.JobResponse;
+import com.sabarno.hireflux.dto.response.JobSearchResponse;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.entity.es.JobDocument;
 import com.sabarno.hireflux.service.JobService;
 import com.sabarno.hireflux.service.UserService;
+import com.sabarno.hireflux.service.impl.es.JobSearchService;
 import com.sabarno.hireflux.utility.projection.JobSummary;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +44,9 @@ public class JobController {
 
     @Autowired
     private JobService jobService;
+
+    @Autowired
+    private JobSearchService jobSearchService;
 
     @Autowired
     private UserService userService;
@@ -73,5 +82,57 @@ public class JobController {
     ) {
         User user = getCurrentUser();
         return ResponseEntity.ok(jobService.removeJob(jobId, user));    
+    }
+
+    @Operation(
+        summary = "Search jobs",
+        description = """
+            Search jobs using keyword, skills, location, and filters.
+            Supports Elasticsearch full-text search and semantic matching.
+            """
+    )
+    @PostMapping("/search")
+    public ResponseEntity<Page<JobSearchResponse>> searchJobs(
+            @Valid @RequestBody JobSearchRequest request,
+
+            @PageableDefault(
+                    size = 20,
+                    sort = "createdAt"
+            )
+            Pageable pageable
+    ) {
+
+        Page<JobDocument> jobs =
+                jobSearchService.search(request, pageable);
+
+        List<JobSearchResponse> response =
+                jobs.getContent()
+                        .stream()
+                        .map(this::mapToResponse)
+                        .toList();
+
+        Page<JobSearchResponse> page =
+                new PageImpl<>(
+                        response,
+                        pageable,
+                        jobs.getTotalElements()
+                );
+
+        return ResponseEntity.ok(page);
+    }
+
+    private JobSearchResponse mapToResponse(JobDocument doc) {
+
+        JobSearchResponse response = new JobSearchResponse();
+
+        response.setId(doc.getId());
+        response.setTitle(doc.getTitle());
+        response.setCompanyName(doc.getCompanyName());
+        response.setLocation(doc.getLocation());
+        response.setJobType(doc.getJobType());
+        response.setRequiredSkills(doc.getRequiredSkills());
+        response.setCreatedAt(doc.getCreatedAt());
+
+        return response;
     }
 }
