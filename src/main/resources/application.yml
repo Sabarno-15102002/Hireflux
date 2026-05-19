@@ -47,6 +47,19 @@ spring:
         spring.json.trusted.packages: "com.sabarno.hireflux.*"
   elasticsearch:
     uris: localhost:9200
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 management:
   endpoints:
     web:
@@ -80,3 +93,7 @@ kafka:
       name: resume-uploaded
     resume-uploaded-dlt:
       name: resume-uploaded-dlt
+
+admin:
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}

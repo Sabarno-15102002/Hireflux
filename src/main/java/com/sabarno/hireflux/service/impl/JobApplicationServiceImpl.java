@@ -160,4 +160,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
         return applicationRepository.findTopCandidates(jobId, pageable);
     }
+
+    @Override
+    public Page<ApplicationSummary> getAllApplications(Pageable pageable) {
+        return applicationRepository.findAllApplications(pageable);
+    }
 }

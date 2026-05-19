@@ -130,7 +130,7 @@ public class JobServiceImpl implements JobService {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
 
-        if (user.getRole() != UserRole.RECRUITER || !job.getPostedBy().getId().equals(user.getId())) {
+        if (user.getRole() != UserRole.RECRUITER && user.getRole() != UserRole.ADMIN || !job.getPostedBy().getId().equals(user.getId())) {
             throw new UnauthorizedException("Only the recruiter who posted the job can remove it");
         }
 

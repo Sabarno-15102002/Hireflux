@@ -6,6 +6,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.config.JwtProvider;
@@ -98,4 +100,10 @@ public class UserServiceImpl implements UserService{
         return userRepository.findProfileById(userId).orElseThrow(() -> new ResourceNotFoundException("No User found"));
     }
 
+    @Override
+    public Page<UserSummary> getAllUsers(Pageable pageable) {
+        return userRepository.findAllProjectedBy(pageable);
+    }
+
+    
 }

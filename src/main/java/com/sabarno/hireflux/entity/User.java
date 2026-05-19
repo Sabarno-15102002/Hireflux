@@ -9,6 +9,7 @@ import com.sabarno.hireflux.utility.enums.AuthProvider;
 import com.sabarno.hireflux.utility.enums.UserRole;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -50,6 +51,11 @@ public class User {
     private String profilePicture;
 
     @ElementCollection
+    @CollectionTable(
+        name = "user_skills",
+        joinColumns = @JoinColumn(name = "user_id")
+    )
+    @Column(name = "skill")
     private List<String> skills;
 
     @ManyToOne

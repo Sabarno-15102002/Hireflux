@@ -18,4 +18,5 @@ public interface JobApplicationService {
     Page<ApplicationSummary> getApplicationsForJob(UUID jobId, User user, Pageable pageable);
     void updateStatus(UUID applicationId, ApplicationStatus status, User user);
     Page<ApplicationSummary> getRankedCandidates(UUID jobId, Pageable pageable);
+    Page<ApplicationSummary> getAllApplications(Pageable pageable);
 }

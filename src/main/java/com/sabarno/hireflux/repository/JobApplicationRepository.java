@@ -41,4 +41,6 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     """)
     void rejectAllByJobId(UUID jobId);
 
+    Page<ApplicationSummary> findAllApplications(Pageable pageable);
+
 }

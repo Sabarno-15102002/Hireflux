@@ -33,18 +33,16 @@ public class AppConfig {
             "/webjars/**"
     };
 
-    @Autowired
-    private OAuth2SuccessHandler oAuth2SuccessHandler;
-
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2SuccessHandler oAuth2SuccessHandler) throws Exception {
         return http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/oauth2/**",
-                                "/login/oauth2/**")
+                                "/login/oauth2/**",
+                                "/api/admin/auth/invite/complete")
                         .permitAll()
                         .requestMatchers(SWAGGER_WHITELIST)
                         .permitAll()

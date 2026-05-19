@@ -60,7 +60,9 @@ public class AuthController {
 
         User existingUser = userService.findUserByEmail(email);
         if (existingUser != null) {
-            throw new BadRequestException("User already exists with email: " + email);
+            // Avoid user enumeration by returning a generic error message
+            log.warn("Registration attempt for existing email: {}", email);
+            throw new BadRequestException("Unable to register user");
         }
 
         User newUser = new User();
@@ -68,7 +70,15 @@ public class AuthController {
         newUser.setName(name);
         newUser.setPassword(passwordEncoder.encode(password));
         newUser.setAuthProvider(AuthProvider.EMAIL);
-        newUser.setRole(user.getRole());
+        if(newUser.getRole() == null) {
+            newUser.setRole(UserRole.CANDIDATE); // Default role
+        }
+        else if(newUser.getRole() == UserRole.ADMIN){
+            throw new BadRequestException("Cannot assign ADMIN role during registration");
+        } 
+        else{
+            newUser.setRole(user.getRole());
+        }
         userService.createUser(newUser);
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
