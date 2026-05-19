@@ -25,6 +25,7 @@ import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.FileProcessingException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.repository.ResumeRepository;
+import com.sabarno.hireflux.service.MetricsService;
 import com.sabarno.hireflux.service.ResumeService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.service.util.EmbeddingService;
@@ -62,6 +63,9 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Autowired
     private MeterRegistry meterRegistry;
+
+    @Autowired
+    private MetricsService metricsService;
 
     @Caching(evict = {
             @CacheEvict(value = "user_resumes", key = "#user.id")
@@ -146,6 +150,7 @@ public class ResumeServiceImpl implements ResumeService {
             resume.setEmbedding(toJson(embedding));
             resume.setUploadStatus(ResumeUploadStatus.PROCESSED);
             resume.setErrorMessage(null);
+            metricsService.incrementResumeSuccess();
             log.info("event=process_resume_completed, resume_id={}, user_id={}", resume.getId(),
                     resume.getUser().getId());
 

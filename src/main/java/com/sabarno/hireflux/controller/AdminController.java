@@ -22,21 +22,26 @@ import com.sabarno.hireflux.dto.request.AdminInviteRequest;
 import com.sabarno.hireflux.dto.request.CompleteInviteRequest;
 import com.sabarno.hireflux.dto.response.AppResponse;
 import com.sabarno.hireflux.dto.response.DashboardAnalyticsResponse;
+import com.sabarno.hireflux.dto.response.KafkaMetricsResponse;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.service.AdminService;
 import com.sabarno.hireflux.service.JobApplicationService;
 import com.sabarno.hireflux.service.JobService;
+import com.sabarno.hireflux.service.MetricsService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.utility.projection.ApplicationSummary;
 import com.sabarno.hireflux.utility.projection.JobSummary;
 import com.sabarno.hireflux.utility.projection.SkillAnalyticsProjection;
 import com.sabarno.hireflux.utility.projection.UserSummary;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/admin")
+@Tag(name = "Admin Controller", description = "APIs for administrative tasks such as user management, job oversight, and analytics")
 public class AdminController {
 
     @Autowired
@@ -48,10 +53,14 @@ public class AdminController {
     @Autowired
     private JobService jobService;
 
+    @Autowired
+    private MetricsService metricsService;
+
 
     @Autowired
     private JobApplicationService applicationService;
 
+    @Operation (summary = "Get user profile summary", description = "Retrieves a summary of the user's profile information based on their user ID")
     @GetMapping("/user/{userId}")
     public ResponseEntity<UserSummary> getUserSummary(
             @PathVariable UUID userId
@@ -61,6 +70,7 @@ public class AdminController {
         return ResponseEntity.ok(summary);
     }
 
+    @Operation (summary = "Send invite to new admin", description = "Sends an invitation to a new admin user")
     @PostMapping("/invite")
     public ResponseEntity<AppResponse> sendInviteToNewAdmin(
         @Valid AdminInviteRequest request
@@ -79,6 +89,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation (summary = "Complete admin invite", description = "Completes the admin invitation process by accepting the invite token and setting a password")
     @PostMapping("/auth/invite/complete")
     public ResponseEntity<Void> completeInvite(
             @Valid
@@ -90,6 +101,7 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation (summary = "Get all users", description = "Retrieves a list of all users with pagination")
     @GetMapping("/users")
     public ResponseEntity<Page<UserSummary>> getAllUsers(
         @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
@@ -97,6 +109,7 @@ public class AdminController {
         return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
 
+    @Operation (summary = "Update user role", description = "Updates the role of a specific user")
     @PatchMapping("/users/{userId}/role")
     public ResponseEntity<AppResponse> updateUserRole(
         @PathVariable UUID userId,
@@ -106,7 +119,7 @@ public class AdminController {
         return ResponseEntity.ok(new AppResponse("User role updated successfully"));
     }
 
-
+    @Operation (summary = "Get all jobs", description = "Retrieves a list of all job postings with pagination")
     @GetMapping("/jobs")
     public ResponseEntity<Page<JobSummary>> getAllJobs(
         @PageableDefault(size = 25, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
@@ -114,6 +127,7 @@ public class AdminController {
         return ResponseEntity.ok(jobService.getAllJobs(pageable));
     }
 
+    @Operation (summary = "Delete job", description = "Deletes a job posting by its ID")
     @DeleteMapping("/jobs/{jobId}")
     public ResponseEntity<AppResponse> deleteJob(
         @PathVariable UUID jobId
@@ -123,6 +137,7 @@ public class AdminController {
         return ResponseEntity.ok(new AppResponse("Job deleted successfully"));
     }
 
+    @Operation (summary = "Get all applications", description = "Retrieves a list of all job applications with pagination")
     @GetMapping("/applications")
     public ResponseEntity<Page<ApplicationSummary>> getAllApplications(
         @PageableDefault(size = 25, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
@@ -130,6 +145,7 @@ public class AdminController {
         return ResponseEntity.ok(applicationService.getAllApplications(pageable));
     }
 
+    @Operation (summary = "Get dashboard statistics", description = "Retrieves analytics data for the admin dashboard")
     @GetMapping("/analytics/dashboard")
     public ResponseEntity<DashboardAnalyticsResponse> getDashboardStats() {
 
@@ -138,10 +154,18 @@ public class AdminController {
         );
     }
 
+    @Operation (summary = "Get top skills", description = "Retrieves a list of the most requested skills")
     @GetMapping("/analytics/skills")
     public ResponseEntity<List<SkillAnalyticsProjection>> getTopSkills() {
         List<SkillAnalyticsProjection> topSkills = adminService.getTopSkills();
         return ResponseEntity.ok(topSkills);
+    }
+
+    @Operation (summary = "Get Kafka metrics", description = "Retrieves metrics for the Kafka message broker")
+    @GetMapping("/analytics/kafka")
+    public ResponseEntity<KafkaMetricsResponse> getKafkaMetrics() {
+        KafkaMetricsResponse metrics = metricsService.getKafkaMetrics();
+        return ResponseEntity.ok(metrics);
     }
 
 }

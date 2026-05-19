@@ -6,6 +6,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.dto.event.ResumeUploadedEvent;
+import com.sabarno.hireflux.service.MetricsService;
 import com.sabarno.hireflux.service.ResumeService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,9 @@ public class ResumeEventConsumer {
 
     @Autowired
     private ResumeService resumeService;
+
+    @Autowired
+    private MetricsService metricsService;
 
     @KafkaListener(
             topics = "${kafka.topic.resume-uploaded.name}",
@@ -30,6 +34,7 @@ public class ResumeEventConsumer {
                 event.getFileKey()
             );
         } catch (Exception e) {
+            metricsService.incrementResumeFailure();
             log.error("Resume processing failed for resumeId={}", event.getResumeId(), e);
         }
     }
@@ -41,6 +46,7 @@ public class ResumeEventConsumer {
                 "Message moved to DLT for resumeId={}",
                 event.getResumeId()
         );
+        metricsService.incrementResumeDlq();
 
         // optional:
         // notify admin
