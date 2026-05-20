@@ -1,5 +1,6 @@
 package com.sabarno.hireflux.controller;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +27,11 @@ import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.service.ResumeService;
 import com.sabarno.hireflux.service.UserService;
+import com.sabarno.hireflux.service.util.RateLimitService;
 import com.sabarno.hireflux.service.util.S3Service;
+import com.sabarno.hireflux.utility.RateLimitUtil;
 
+import io.github.bucket4j.Bucket;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,6 +57,9 @@ public class ResumeController {
 
     @Autowired
     private ResumeEventProducer resumeEventProducer;
+
+    @Autowired
+    private RateLimitService rateLimitService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
@@ -95,7 +102,18 @@ public class ResumeController {
     ) {
         Timer.Sample sample = Timer.start(meterRegistry);
         User user = getCurrentUser();
+        
+        Bucket bucket = rateLimitService.resolveBucket(
+            "resume-upload:" + user.getId(),
+            10,
+            Duration.ofHours(1)
+        );
 
+        RateLimitUtil.consume(
+                bucket,
+                "Resume upload limit exceeded"
+        );
+        
         String fileKey = uploadDTO.getFileKey();
         String fileName = uploadDTO.getFileName();
         String safeFileName = fileName.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");

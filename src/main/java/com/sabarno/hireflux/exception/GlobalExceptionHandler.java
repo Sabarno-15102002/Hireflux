@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.ConflictException;
 import com.sabarno.hireflux.exception.impl.FileProcessingException;
+import com.sabarno.hireflux.exception.impl.RateLimitExceededException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 
@@ -71,6 +72,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(500).body(errorDetail);
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorDetail> handleRateLimit(RateLimitExceededException ex) {
+        ErrorDetail errorDetail = new ErrorDetail();
+        errorDetail.setError("Rate Limit Exceeded");
+        errorDetail.setMessage(ex.getMessage());
+        errorDetail.setTimestamp(LocalDateTime.now());
+        meterRegistry.counter("exceptions.rate_limit_exceeded").increment();
+        return ResponseEntity.status(429).body(errorDetail);
+    }
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetail> handleGeneric(Exception ex) {
         ErrorDetail errorDetail = new ErrorDetail();

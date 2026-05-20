@@ -1,5 +1,7 @@
 package com.sabarno.hireflux.controller;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,11 +28,15 @@ import com.sabarno.hireflux.exception.impl.ConflictException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.service.CustomUserService;
 import com.sabarno.hireflux.service.UserService;
+import com.sabarno.hireflux.service.util.RateLimitService;
+import com.sabarno.hireflux.utility.RateLimitUtil;
 import com.sabarno.hireflux.utility.enums.AuthProvider;
 import com.sabarno.hireflux.utility.enums.UserRole;
 
+import io.github.bucket4j.Bucket;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -50,6 +56,9 @@ public class AuthController {
 
     @Autowired
     private CustomUserService customUserDetailsService;
+
+    @Autowired
+    private RateLimitService rateLimitService;
 
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns a JWT token upon successful registration")
     @PostMapping("/register")
@@ -101,7 +110,26 @@ public class AuthController {
 
     @Operation(summary = "Login a user", description = "Authenticates a user and returns a JWT token upon successful login")
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> loginUserHandler(@RequestBody LoginRequest user) {
+    public ResponseEntity<AuthResponse> loginUserHandler(
+        @RequestBody LoginRequest user,
+        HttpServletRequest request
+    ) {
+        
+        // Rate limiting
+        String ip = getClientIp(request);
+
+        Bucket bucket = rateLimitService.resolveBucket(
+                "login:" + ip,
+                5,
+                Duration.ofMinutes(1)
+        );
+
+        RateLimitUtil.consume(
+                bucket,
+                "Too many login attempts"
+        );
+
+        // Existing login logic
         String email = user.getEmail();
         String password = user.getPassword();
 
@@ -124,6 +152,17 @@ public class AuthController {
         }
 
         
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+
+        String xfHeader = request.getHeader("X-Forwarded-For");
+
+        if (xfHeader == null) {
+            return request.getRemoteAddr();
+        }
+
+        return xfHeader.split(",")[0];
     }
 
     private Authentication authenticate(String email, String password) {

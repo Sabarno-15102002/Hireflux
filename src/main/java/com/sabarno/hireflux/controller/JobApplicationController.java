@@ -1,5 +1,6 @@
 package com.sabarno.hireflux.controller;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
@@ -25,10 +26,13 @@ import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.service.JobApplicationService;
 import com.sabarno.hireflux.service.UserService;
+import com.sabarno.hireflux.service.util.RateLimitService;
+import com.sabarno.hireflux.utility.RateLimitUtil;
 import com.sabarno.hireflux.utility.enums.ApplicationStatus;
 import com.sabarno.hireflux.utility.enums.UserRole;
 import com.sabarno.hireflux.utility.projection.ApplicationSummary;
 
+import io.github.bucket4j.Bucket;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -43,6 +47,9 @@ public class JobApplicationController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RateLimitService rateLimitService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
@@ -59,6 +66,16 @@ public class JobApplicationController {
     ) throws BadRequestException {
 
         User user = getCurrentUser();
+        Bucket bucket = rateLimitService.resolveBucket(
+            "job-apply:" + user.getId(),
+            20,
+            Duration.ofHours(1)
+        );
+
+        RateLimitUtil.consume(
+                bucket,
+                "Too many job applications"
+        );
         applicationService.applyToJob(jobId, request, user);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
