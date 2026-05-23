@@ -36,6 +36,7 @@ public class ResumeEventConsumer {
         } catch (Exception e) {
             metricsService.incrementResumeFailure();
             log.error("Resume processing failed for resumeId={}", event.getResumeId(), e);
+            throw e; // Let the exception propagate to trigger retry and DLT handling
         }
     }
 
@@ -47,10 +48,5 @@ public class ResumeEventConsumer {
                 event.getResumeId()
         );
         metricsService.incrementResumeDlq();
-
-        // optional:
-        // notify admin
-        // save failure metadata
-        // trigger alert
     }
 }

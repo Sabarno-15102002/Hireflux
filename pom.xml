@@ -123,6 +123,10 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 		<dependency>
@@ -184,6 +188,16 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<plugin>
+					<groupId>com.google.cloud.tools</groupId>
+					<artifactId>jib-maven-plugin</artifactId>
+					<version>3.4.2</version>
+					<configuration>
+						<to>
+							<image>sabarnobiswas2002/${project.artifactId}:v${project.version}</image>
+						</to>
+					</configuration>
 			</plugin>
 		</plugins>
 	</build>

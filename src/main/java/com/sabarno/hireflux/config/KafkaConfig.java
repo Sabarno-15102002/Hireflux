@@ -5,17 +5,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.annotation.EnableKafkaRetryTopic;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.retrytopic.RetryTopicConfiguration;
 import org.springframework.kafka.retrytopic.RetryTopicConfigurationBuilder;
+import org.springframework.kafka.transaction.KafkaTransactionManager;
 
 import com.sabarno.hireflux.exception.NonRetryableProcessingException;
 import com.sabarno.hireflux.service.MetricsService;
 
 
 @Configuration
+@EnableKafka
+@EnableKafkaRetryTopic
 public class KafkaConfig {
 
     @Value("${kafka.topic.resume-uploaded.name}")
@@ -31,6 +36,13 @@ public class KafkaConfig {
     @Bean
     KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
+    KafkaTransactionManager<String, Object> kafkaTransactionManager(
+            ProducerFactory<String, Object> producerFactory) {
+
+        return new KafkaTransactionManager<>(producerFactory);
     }
 
     @Bean
