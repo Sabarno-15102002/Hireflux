@@ -57,10 +57,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         System.out.println("Role: " + user.getRole());
 
 
-        ResponseEntity<AuthResponse> authResponse = ResponseEntity.ok(new AuthResponse(jwt, true, "Generated token successfully"));
+        AuthResponse authResponse = new AuthResponse(jwt, null, true, "Generated token successfully");
 
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(authResponse.getBody().toString());
+        response.getWriter().write(authResponse.toString());
     }
 }

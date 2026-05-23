@@ -19,14 +19,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sabarno.hireflux.config.JwtProvider;
 import com.sabarno.hireflux.dto.request.LoginRequest;
+import com.sabarno.hireflux.dto.request.RefreshTokenRequest;
 import com.sabarno.hireflux.dto.request.RegisterRequest;
 import com.sabarno.hireflux.dto.request.RoleRequestDTO;
+import com.sabarno.hireflux.dto.response.AppResponse;
 import com.sabarno.hireflux.dto.response.AuthResponse;
+import com.sabarno.hireflux.entity.RefreshToken;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.ConflictException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.service.CustomUserService;
+import com.sabarno.hireflux.service.RefreshTokenService;
 import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.service.util.RateLimitService;
 import com.sabarno.hireflux.utility.RateLimitUtil;
@@ -59,6 +63,9 @@ public class AuthController {
 
     @Autowired
     private RateLimitService rateLimitService;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns a JWT token upon successful registration")
     @PostMapping("/register")
@@ -97,10 +104,12 @@ public class AuthController {
                 userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String token = jwtProvider.generateToken(authentication);
+        String accessToken = jwtProvider.generateToken(authentication);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(newUser);
 
         AuthResponse res = new AuthResponse();
-        res.setToken(token);
+        res.setAccessToken(accessToken);
+        res.setRefreshToken(refreshToken.getToken());
         res.setIsAuth(true);
         res.setMessage("Token generated successfully");
         log.info("User registered: {}", email);
@@ -136,16 +145,20 @@ public class AuthController {
         try {
             Authentication authentication = authenticate(email, password);
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            String token = jwtProvider.generateToken(authentication);
+            String accessToken = jwtProvider.generateToken(authentication);
+            User userEntity = userService.findUserByEmail(email);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userEntity);
 
             AuthResponse res = new AuthResponse();
-            res.setToken(token);
+            res.setAccessToken(accessToken);
+            res.setRefreshToken(refreshToken.getToken());
             res.setIsAuth(true);
             res.setMessage("Token generated successfully");
             return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
         } catch (BadCredentialsException e) {
             AuthResponse res = new AuthResponse();
-            res.setToken(null);
+            res.setAccessToken(null);
+            res.setRefreshToken(null);
             res.setIsAuth(false);
             res.setMessage("Invalid email or password");
             return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
@@ -173,7 +186,7 @@ public class AuthController {
             throw new BadCredentialsException("Invalid email");
         }
 
-        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+        if (password != null && !passwordEncoder.matches(password, userDetails.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
 
@@ -208,10 +221,44 @@ public class AuthController {
         user.setRole(selectedRole);
         userService.createUser(user);
 
-        String jwt = jwtProvider.generateTokenForOAuth(
+        String oAuthAccessToken = jwtProvider.generateTokenForOAuth(
                 user.getEmail(),
                 user.getRole().name());
+        
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
-        return ResponseEntity.ok(new AuthResponse(jwt, true, "Generated OAuth2 token"));
+        return ResponseEntity.ok(new AuthResponse(oAuthAccessToken, refreshToken.getToken(), true, "Generated OAuth2 token"));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshAccessToken(@RequestBody RefreshTokenRequest request) {
+        RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
+
+        if (refreshToken == null) {
+            throw new BadCredentialsException("Invalid refresh token");
+        }
+
+        User user = refreshToken.getUser();
+        Authentication authentication = authenticate(user.getEmail(), null);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String accessToken = jwtProvider.generateToken(authentication);
+        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user);
+
+        return ResponseEntity.ok(new AuthResponse(accessToken, newRefreshToken.getToken(), true, "Tokens refreshed successfully"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<AppResponse> logout() {
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        User user = userService.findUserByEmail(email);
+
+        refreshTokenService.revokeUserTokens(user);
+
+        return ResponseEntity.ok(new AppResponse("Logged out successfully"));
     }
 }

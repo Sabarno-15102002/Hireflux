@@ -11,7 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -33,37 +33,92 @@ public class AppConfig {
     };
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2SuccessHandler oAuth2SuccessHandler) throws Exception {
-        return http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                "/api/auth/register",
-                                "/api/auth/login",
-                                "/oauth2/**",
-                                "/login/oauth2/**",
-                                "/api/admin/auth/invite/complete")
-                        .permitAll()
-                        .requestMatchers(SWAGGER_WHITELIST)
-                        .permitAll()
-                        .requestMatchers("/actuator/prometheus").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/recruiter/**").hasRole("RECRUITER")
-                        .requestMatchers("/api/candidate/**").hasRole("CANDIDATE")
-                        .anyRequest().authenticated())
-                        .addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)
-                        .addFilterBefore(requestLoggingFilter(), JwtTokenValidator.class)
-                .oauth2Login(oauth -> oauth
-                        .successHandler(oAuth2SuccessHandler)
-                        .failureHandler((request, response, exception) -> {
-                            log.error("OAuth2 login failed: {}", exception.getMessage());
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"OAuth2 login failed\"}");
-                        }))
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .build();
-    }
+SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        OAuth2SuccessHandler oAuth2SuccessHandler,
+        JwtTokenValidator jwtTokenValidator
+) throws Exception {
+
+    return http
+            // Stateless JWT authentication
+            .sessionManagement(management ->
+                    management.sessionCreationPolicy(
+                            SessionCreationPolicy.STATELESS
+                    )
+            )
+            // Authorization rules
+            .authorizeHttpRequests(authorize -> authorize
+                    // Public endpoints
+                    .requestMatchers(
+                            "/api/auth/register",
+                            "/api/auth/login",
+                            "/api/auth/refresh",
+                            "/oauth2/**",
+                            "/login/oauth2/**",
+                            "/api/admin/auth/invite/complete"
+                    ).permitAll()
+                    // Swagger
+                    .requestMatchers(SWAGGER_WHITELIST)
+                    .permitAll()
+                    // Monitoring
+                    .requestMatchers("/actuator/prometheus")
+                    .permitAll()
+                    // Role-based access
+                    .requestMatchers("/api/admin/**")
+                    .hasRole("ADMIN")
+
+                    .requestMatchers("/api/recruiter/**")
+                    .hasRole("RECRUITER")
+
+                    .requestMatchers("/api/candidate/**")
+                    .hasRole("CANDIDATE")
+
+                    // Everything else requires auth
+                    .anyRequest()
+                    .authenticated()
+            )
+            // JWT Filter
+            .addFilterBefore(
+                    jwtTokenValidator,
+                    UsernamePasswordAuthenticationFilter.class
+            )
+            // Request logging filter
+            .addFilterBefore(
+                    requestLoggingFilter(),
+                    JwtTokenValidator.class
+            )
+            // OAuth2 login
+            .oauth2Login(oauth -> oauth
+                    .successHandler(oAuth2SuccessHandler)
+                    .failureHandler((request, response, exception) -> {
+                        log.error(
+                                "OAuth2 login failed: {}",
+                                exception.getMessage()
+                        );
+
+                        response.setStatus(
+                                HttpServletResponse.SC_UNAUTHORIZED
+                        );
+
+                        response.setContentType("application/json");
+
+                        response.getWriter().write("""
+                            {
+                                "error": "OAuth2 login failed"
+                            }
+                        """);
+                    })
+            )
+            // CSRF disabled for stateless JWT APIs
+            .csrf(csrf -> csrf.disable())
+            // CORS
+            .cors(cors ->
+                    cors.configurationSource(
+                            corsConfigurationSource()
+                    )
+            )
+            .build();
+}
 
     private CorsConfigurationSource corsConfigurationSource() {
         return request -> {
@@ -91,5 +146,10 @@ public class AppConfig {
     @Bean
     RequestLoggingFilter requestLoggingFilter() {
         return new RequestLoggingFilter();
+    }
+
+    @Bean
+    JwtTokenValidator jwtTokenValidator() {
+        return new JwtTokenValidator();
     }
 }
