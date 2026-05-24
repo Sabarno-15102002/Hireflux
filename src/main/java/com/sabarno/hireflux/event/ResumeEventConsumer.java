@@ -6,6 +6,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.dto.event.ResumeUploadedEvent;
+import com.sabarno.hireflux.exception.NonRetryableProcessingException;
 import com.sabarno.hireflux.service.MetricsService;
 import com.sabarno.hireflux.service.ResumeService;
 
@@ -33,9 +34,14 @@ public class ResumeEventConsumer {
                 event.getResumeId(),
                 event.getFileKey()
             );
-        } catch (Exception e) {
+        } catch (NonRetryableProcessingException e) {
             metricsService.incrementResumeFailure();
             log.error("Resume processing failed for resumeId={}", event.getResumeId(), e);
+            throw e; // Let the exception propagate to trigger retry and DLT handling
+        }
+        catch (Exception e) {
+            metricsService.incrementResumeRetry();
+            log.error("Unexpected error while processing resumeId={}", event.getResumeId(), e);
             throw e; // Let the exception propagate to trigger retry and DLT handling
         }
     }

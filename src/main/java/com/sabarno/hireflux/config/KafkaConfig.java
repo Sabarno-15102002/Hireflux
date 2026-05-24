@@ -1,7 +1,6 @@
 package com.sabarno.hireflux.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +14,6 @@ import org.springframework.kafka.retrytopic.RetryTopicConfigurationBuilder;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
 
 import com.sabarno.hireflux.exception.NonRetryableProcessingException;
-import com.sabarno.hireflux.service.MetricsService;
 
 
 @Configuration
@@ -27,11 +25,8 @@ public class KafkaConfig {
     private String resumeUploadTopicName;
     @Value("${kafka.topic.resume-uploaded-dlt.name}")
     private String resumeUploadDltTopicName;
-    private static final Integer TOPIC_REPLICATION_FACTOR = 3;
+    private static final Integer TOPIC_REPLICATION_FACTOR = 1;
     private static final Integer TOPIC_PARTITION_COUNT = 3;
-
-    @Autowired
-    private MetricsService metricsService;
 
     @Bean
     KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> producerFactory) {
@@ -65,8 +60,6 @@ public class KafkaConfig {
     RetryTopicConfiguration retryTopicConfiguration(
         KafkaTemplate<String, Object> kafkaTemplate
     ) {
-
-        metricsService.incrementResumeRetry();
         return RetryTopicConfigurationBuilder
             .newInstance()
             // retry 3 times
@@ -77,6 +70,7 @@ public class KafkaConfig {
                     2.0,    // multiplier
                     10000   // max delay
             )
+            .retryTopicSuffix("-retry")
             .dltSuffix("-dlt")
             .notRetryOn(NonRetryableProcessingException.class)
             .create(kafkaTemplate);
