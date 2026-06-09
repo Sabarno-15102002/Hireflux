@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -36,20 +35,19 @@ import io.github.bucket4j.Bucket;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/applications")
+@RequiredArgsConstructor
 @Tag(name = "Job Application Controller", description = "APIs for managing job applications, viewing applicants, and updating application status")
 public class JobApplicationController {
 
-    @Autowired
-    private JobApplicationService applicationService;
+    private final JobApplicationService applicationService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private RateLimitService rateLimitService;
+    private final RateLimitService rateLimitService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()

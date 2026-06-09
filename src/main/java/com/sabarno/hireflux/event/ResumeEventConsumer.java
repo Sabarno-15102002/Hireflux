@@ -1,6 +1,5 @@
 package com.sabarno.hireflux.event;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -10,17 +9,17 @@ import com.sabarno.hireflux.exception.NonRetryableProcessingException;
 import com.sabarno.hireflux.service.MetricsService;
 import com.sabarno.hireflux.service.ResumeService;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ResumeEventConsumer {
 
-    @Autowired
-    private ResumeService resumeService;
+    private final ResumeService resumeService;
 
-    @Autowired
-    private MetricsService metricsService;
+    private final MetricsService metricsService;
 
     @KafkaListener(
             topics = "${kafka.topic.resume-uploaded.name}",

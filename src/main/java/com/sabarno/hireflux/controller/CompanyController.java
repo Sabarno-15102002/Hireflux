@@ -3,7 +3,6 @@ package com.sabarno.hireflux.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,17 +20,17 @@ import com.sabarno.hireflux.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/companies")
+@RequiredArgsConstructor
 @Tag(name = "Company Controller", description = "APIs for managing company profiles and searching companies")
 public class CompanyController {
 
-    @Autowired
-    private CompanyService companyService;
+    private final CompanyService companyService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()

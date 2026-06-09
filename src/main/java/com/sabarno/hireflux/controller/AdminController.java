@@ -3,7 +3,6 @@ package com.sabarno.hireflux.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -37,28 +36,25 @@ import com.sabarno.hireflux.utility.projection.UserSummary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/admin")
+@RequiredArgsConstructor
 @Tag(name = "Admin Controller", description = "APIs for administrative tasks such as user management, job oversight, and analytics")
 public class AdminController {
 
-    @Autowired
-    private AdminService adminService;
+    private final AdminService adminService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private JobService jobService;
+    private final JobService jobService;
 
-    @Autowired
-    private MetricsService metricsService;
+    private final MetricsService metricsService;
 
-
-    @Autowired
-    private JobApplicationService applicationService;
+    private final JobApplicationService applicationService;
 
     @Operation (summary = "Get user profile summary", description = "Retrieves a summary of the user's profile information based on their user ID")
     @GetMapping("/user/{userId}")

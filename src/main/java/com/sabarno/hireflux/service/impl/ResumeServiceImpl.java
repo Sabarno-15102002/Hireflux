@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.tika.Tika;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -34,38 +33,32 @@ import com.sabarno.hireflux.service.util.S3Service;
 import com.sabarno.hireflux.utility.enums.ResumeUploadStatus;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.exception.SdkClientException;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ResumeServiceImpl implements ResumeService {
 
     private static final String PROCESS_RESUME_FAILED_LOG = "event=process_resume_failed, resume_id={}, user_id={}";
 
-    @Autowired
-    private ResumeRepository resumeRepository;
+    private final ResumeRepository resumeRepository;
 
-    @Autowired
-    private OpenAIService openAIService;
+    private final OpenAIService openAIService;
 
-    @Autowired
-    private S3Service s3Service;
+    private final S3Service s3Service;
 
-    @Autowired
-    private EmbeddingService embeddingService;
+    private final EmbeddingService embeddingService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
-    @Autowired
-    private MetricsService metricsService;
+    private final MetricsService metricsService;
 
     @Caching(evict = {
             @CacheEvict(value = "user_resumes", key = "#user.id")

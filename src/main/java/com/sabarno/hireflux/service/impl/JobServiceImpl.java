@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -30,29 +29,25 @@ import com.sabarno.hireflux.utility.projection.JobSummary;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class JobServiceImpl implements JobService {
 
-    @Autowired
-    private JobRepository jobRepository;
+    private final JobRepository jobRepository;
 
-    @Autowired
-    private JobApplicationRepository applicationRepository;
+    private final JobApplicationRepository applicationRepository;
 
-    @Autowired
-    private EmbeddingAsyncService embeddingAsyncService;
+    private final EmbeddingAsyncService embeddingAsyncService;
 
-    @Autowired
-    private SkillGraphService skillGraphService;
+    private final SkillGraphService skillGraphService;
 
-    @Autowired
-    private MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
-    @Autowired
-    private JobIndexService jobIndexService;
+    private final JobIndexService jobIndexService;
 
     @CacheEvict(value = "jobs", allEntries = true)
     @Override

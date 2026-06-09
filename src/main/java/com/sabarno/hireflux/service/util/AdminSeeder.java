@@ -1,6 +1,5 @@
 package com.sabarno.hireflux.service.util;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,14 +10,15 @@ import com.sabarno.hireflux.repository.UserRepository;
 import com.sabarno.hireflux.utility.enums.AuthProvider;
 import com.sabarno.hireflux.utility.enums.UserRole;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class AdminSeeder implements CommandLineRunner {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${admin.email}")
     private String adminEmail;

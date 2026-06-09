@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -20,23 +19,21 @@ import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.service.SkillGraphService;
 import com.sabarno.hireflux.utility.enums.ResumeUploadStatus;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class JobMatchingAlgo {
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private SkillGraphService skillGraphService;
+    private final SkillGraphService skillGraphService;
 
-    @Autowired
-    private ResumeParsedDataExtraction dataExtraction;
+    private final ResumeParsedDataExtraction dataExtraction;
 
-    @Autowired
-    private JobApplicationRepository jobApplicationRepository;
+    private final JobApplicationRepository jobApplicationRepository;
 
     private List<Double> fromJson(String json) throws BadRequestException {
         try {

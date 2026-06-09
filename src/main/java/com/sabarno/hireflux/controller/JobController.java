@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -34,22 +33,21 @@ import com.sabarno.hireflux.utility.projection.JobSummary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/jobs")
+@RequiredArgsConstructor
 @Tag(name = "Job Controller", description = "APIs for managing job postings, viewing jobs, and removing jobs")
 public class JobController {
 
-    @Autowired
-    private JobService jobService;
+    private final JobService jobService;
 
-    @Autowired
-    private JobSearchService jobSearchService;
+    private final JobSearchService jobSearchService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()

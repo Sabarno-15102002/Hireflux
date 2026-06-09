@@ -2,7 +2,6 @@ package com.sabarno.hireflux.service.impl;
 
 import java.time.LocalDateTime;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.config.JwtProvider;
@@ -12,14 +11,15 @@ import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.repository.RefreshTokenRepository;
 import com.sabarno.hireflux.service.RefreshTokenService;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements RefreshTokenService{
 
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    @Autowired
-    private JwtProvider jwtProvider;
+    private final JwtProvider jwtProvider;
 
     @Override
     public RefreshToken createRefreshToken(User user) {

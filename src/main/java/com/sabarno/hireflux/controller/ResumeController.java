@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,29 +36,25 @@ import io.micrometer.core.instrument.Timer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/resume")
+@RequiredArgsConstructor
 @Tag(name = "Resume Controller", description = "APIs for managing resume uploads, downloads, and retrieval")
 public class ResumeController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private ResumeService resumeService;
+    private final ResumeService resumeService;
 
-    @Autowired
-    private S3Service s3Service;
+    private final S3Service s3Service;
 
-    @Autowired
-    private MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
-    @Autowired
-    private ResumeEventProducer resumeEventProducer;
+    private final ResumeEventProducer resumeEventProducer;
 
-    @Autowired
-    private RateLimitService rateLimitService;
+    private final RateLimitService rateLimitService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()

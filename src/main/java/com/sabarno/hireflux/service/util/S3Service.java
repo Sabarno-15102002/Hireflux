@@ -3,10 +3,10 @@ package com.sabarno.hireflux.service.util;
 import java.io.InputStream;
 import java.time.Duration;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -15,13 +15,12 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @Service
+@RequiredArgsConstructor
 public class S3Service {
 
-    @Autowired
-    private S3Presigner presigner;
+    private final S3Presigner presigner;
 
-    @Autowired
-    private S3Client s3Client;
+    private final S3Client s3Client;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;

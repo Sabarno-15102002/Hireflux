@@ -1,11 +1,15 @@
 package com.sabarno.hireflux.service.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.dto.response.KafkaMetricsResponse;
 import com.sabarno.hireflux.service.MetricsService;
 
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
 public class MetricsServiceImpl implements MetricsService {
 
     private static final String SUCCESS_KEY = "metrics:kafka:resume:success";
@@ -16,9 +20,7 @@ public class MetricsServiceImpl implements MetricsService {
 
     private static final String DLQ_KEY = "metrics:kafka:resume:dlq";
 
-
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Override
     public void incrementResumeSuccess() {

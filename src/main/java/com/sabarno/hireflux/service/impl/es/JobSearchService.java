@@ -3,8 +3,8 @@ package com.sabarno.hireflux.service.impl.es;
 import java.util.List;
 
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import lombok.RequiredArgsConstructor;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +18,10 @@ import com.sabarno.hireflux.dto.request.JobSearchRequest;
 import com.sabarno.hireflux.entity.es.JobDocument;
 
 @Service
+@RequiredArgsConstructor
 public class JobSearchService {
 
-    @Autowired
-    private ElasticsearchOperations elasticsearchOperations;
+    private final ElasticsearchOperations elasticsearchOperations;
 
     public Page<JobDocument> search(JobSearchRequest request, Pageable pageable) {
 

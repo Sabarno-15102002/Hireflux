@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,14 +20,15 @@ import com.sabarno.hireflux.service.SkillGraphService;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class SkillGraphServiceImpl implements SkillGraphService {
 
-    @Autowired
-    private SkillEdgeRepository repository;
+    private final SkillEdgeRepository repository;
 
     private final Map<String, Double> cache = new ConcurrentHashMap<>();
     private final Map<String, SkillEdge> edgeStore = new ConcurrentHashMap<>();

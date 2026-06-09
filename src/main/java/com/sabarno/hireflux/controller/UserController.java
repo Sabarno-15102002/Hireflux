@@ -2,7 +2,6 @@ package com.sabarno.hireflux.controller;
 
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,14 +18,15 @@ import com.sabarno.hireflux.utility.projection.UserSummary;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 @Tag(name = "User Controller", description = "APIs for managing user profiles and searching users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()

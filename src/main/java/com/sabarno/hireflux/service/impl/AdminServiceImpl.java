@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,26 +25,23 @@ import com.sabarno.hireflux.utility.enums.AuthProvider;
 import com.sabarno.hireflux.utility.enums.UserRole;
 import com.sabarno.hireflux.utility.projection.SkillAnalyticsProjection;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService{
 
-    @Autowired
-    private InviteRepository inviteRepository;
+    private final InviteRepository inviteRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private EmailService emailService;
+    private final EmailService emailService;
 
-    @Autowired
-    private JobRepository jobRepository;
+    private final JobRepository jobRepository;
 
-    @Autowired
-    private JobApplicationRepository applicationRepository;
+    private final JobApplicationRepository applicationRepository;
 
     @Override
     public void inviteUser(AdminInviteRequest request, User admin) {

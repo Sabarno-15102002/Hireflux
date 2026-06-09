@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,11 +12,13 @@ import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.exception.impl.FileProcessingException;
 import com.sabarno.hireflux.utility.Experience;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class ResumeParsedDataExtraction {
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     public ResumeParsedData getParsedData(Resume resume) {
         try {

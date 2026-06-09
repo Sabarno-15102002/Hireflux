@@ -2,18 +2,19 @@ package com.sabarno.hireflux.service.impl.es;
 
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.es.JobDocument;
 import com.sabarno.hireflux.repository.es.JobSearchRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class JobIndexService {
 
-    @Autowired
-    private JobSearchRepository jobSearchRepository;
+    private final JobSearchRepository jobSearchRepository;
 
     public void indexJob(Job job) {
 

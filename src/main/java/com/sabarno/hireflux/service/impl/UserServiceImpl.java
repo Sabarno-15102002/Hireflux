@@ -3,7 +3,6 @@ package com.sabarno.hireflux.service.impl;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -24,20 +23,19 @@ import com.sabarno.hireflux.service.UserService;
 import com.sabarno.hireflux.utility.enums.AuthProvider;
 import com.sabarno.hireflux.utility.projection.UserSummary;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService{
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private SavedJobRepository savedJobRepository;
+    private final SavedJobRepository savedJobRepository;
 
-    @Autowired
-    private JwtProvider jwtProvider;
+    private final JwtProvider jwtProvider;
 
-    @Autowired
-    private JobRepository jobRepository;
+    private final JobRepository jobRepository;
 
     @Cacheable(value = "users", key = "#email")
     @Override
