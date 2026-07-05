@@ -5,6 +5,8 @@ import java.util.Collections;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -12,11 +14,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,131 +29,125 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AppConfig {
 
-    private static final String[] SWAGGER_WHITELIST = {
-            "/swagger-ui/**",
-            "/swagger-resources/**",
-            "/v3/api-docs/**",
-            "/webjars/**"
-    };
-
-    @Bean
-SecurityFilterChain securityFilterChain(
-        HttpSecurity http,
-        OAuth2SuccessHandler oAuth2SuccessHandler,
-        JwtTokenValidator jwtTokenValidator
-) throws Exception {
-
-    return http
-            // Stateless JWT authentication
-            .sessionManagement(management ->
-                    management.sessionCreationPolicy(
-                            SessionCreationPolicy.STATELESS
-                    )
-            )
-            // Authorization rules
-            .authorizeHttpRequests(authorize -> authorize
-                    // Public endpoints
-                    .requestMatchers(
-                            "/api/auth/register",
-                            "/api/auth/login",
-                            "/api/auth/refresh",
-                            "/oauth2/**",
-                            "/login/oauth2/**",
-                            "/api/admin/auth/invite/complete"
-                    ).permitAll()
-                    // Swagger
-                    .requestMatchers(SWAGGER_WHITELIST)
-                    .permitAll()
-                    // Monitoring
-                    .requestMatchers("/actuator/prometheus")
-                    .permitAll()
-                    // Role-based access
-                    .requestMatchers("/api/admin/**")
-                    .hasRole("ADMIN")
-
-                    .requestMatchers("/api/recruiter/**")
-                    .hasRole("RECRUITER")
-
-                    .requestMatchers("/api/candidate/**")
-                    .hasRole("CANDIDATE")
-
-                    // Everything else requires auth
-                    .anyRequest()
-                    .authenticated()
-            )
-            // JWT Filter
-            .addFilterBefore(
-                    jwtTokenValidator,
-                    UsernamePasswordAuthenticationFilter.class
-            )
-            // Request logging filter
-            .addFilterBefore(
-                    requestLoggingFilter(),
-                    JwtTokenValidator.class
-            )
-            // OAuth2 login
-            .oauth2Login(oauth -> oauth
-                    .successHandler(oAuth2SuccessHandler)
-                    .failureHandler((request, response, exception) -> {
-                        log.error(
-                                "OAuth2 login failed: {}",
-                                exception.getMessage()
-                        );
-
-                        response.setStatus(
-                                HttpServletResponse.SC_UNAUTHORIZED
-                        );
-
-                        response.setContentType("application/json");
-
-                        response.getWriter().write("""
-                            {
-                                "error": "OAuth2 login failed"
-                            }
-                        """);
-                    })
-            )
-            // CSRF disabled for stateless JWT APIs
-            .csrf(csrf -> csrf.disable())
-            // CORS
-            .cors(cors ->
-                    cors.configurationSource(
-                            corsConfigurationSource()
-                    )
-            )
-            .build();
-}
-
-    private CorsConfigurationSource corsConfigurationSource() {
-        return request -> {
-            CorsConfiguration config = new CorsConfiguration();
-            config.addAllowedOriginPattern("*");
-            // config.setAllowedOrigins(List.of("http://localhost:3000"));
-            config.setAllowCredentials(true);
-            config.setAllowedHeaders(Collections.singletonList("*"));
-            config.setExposedHeaders(Arrays.asList("Authorization"));
-            config.setMaxAge(3600L);
-            return config;
+        private static final String[] SWAGGER_WHITELIST = {
+                        "/swagger-ui/**",
+                        "/swagger-resources/**",
+                        "/v3/api-docs/**",
+                        "/webjars/**"
         };
-    }
 
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        SecurityFilterChain securityFilterChain(
+                        HttpSecurity http,
+                        OAuth2SuccessHandler oAuth2SuccessHandler,
+                        JwtTokenValidator jwtTokenValidator) throws Exception {
 
-    @Bean
-    ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
+                return http
+                                // Stateless JWT authentication
+                                .sessionManagement(management -> management.sessionCreationPolicy(
+                                                SessionCreationPolicy.STATELESS))
+                                // Authorization rules
+                                .authorizeHttpRequests(authorize -> authorize
+                                                // Public endpoints
+                                                .requestMatchers(
+                                                                "/api/auth/register",
+                                                                "/api/auth/login",
+                                                                "/api/auth/refresh",
+                                                                "/oauth2/**",
+                                                                "/login/oauth2/**",
+                                                                "/actuator/health",
+                                                                "/api/admin/auth/invite/complete")
+                                                .permitAll()
+                                                // Swagger
+                                                .requestMatchers(SWAGGER_WHITELIST)
+                                                .permitAll()
+                                                // Monitoring
+                                                .requestMatchers("/actuator/prometheus")
+                                                .permitAll()
+                                                // Role-based access
+                                                .requestMatchers("/api/admin/**")
+                                                .hasRole("ADMIN")
 
-    @Bean
-    RequestLoggingFilter requestLoggingFilter() {
-        return new RequestLoggingFilter();
-    }
+                                                .requestMatchers("/api/recruiter/**")
+                                                .hasRole("RECRUITER")
 
-    @Bean
-    JwtTokenValidator jwtTokenValidator() {
-        return new JwtTokenValidator();
-    }
+                                                .requestMatchers("/api/candidate/**")
+                                                .hasRole("CANDIDATE")
+
+                                                // Everything else requires auth
+                                                .anyRequest()
+                                                .authenticated())
+                                // JWT Filter
+                                .addFilterBefore(
+                                                jwtTokenValidator,
+                                                UsernamePasswordAuthenticationFilter.class)
+                                // Request logging filter
+                                .addFilterBefore(
+                                                requestLoggingFilter(),
+                                                JwtTokenValidator.class)
+                                // OAuth2 login
+                                .oauth2Login(oauth -> oauth
+                                                .successHandler(oAuth2SuccessHandler)
+                                                .failureHandler((request, response, exception) -> {
+                                                        log.error(
+                                                                        "OAuth2 login failed: {}",
+                                                                        exception.getMessage());
+
+                                                        response.setStatus(
+                                                                        HttpServletResponse.SC_UNAUTHORIZED);
+
+                                                        response.setContentType("application/json");
+
+                                                        response.getWriter().write("""
+                                                                            {
+                                                                                "error": "OAuth2 login failed"
+                                                                            }
+                                                                        """);
+                                                }))
+                                // CSRF disabled for stateless JWT APIs
+                                .csrf(csrf -> csrf.disable())
+                                // CORS
+                                .cors(cors -> cors.configurationSource(
+                                                corsConfigurationSource()))
+                                .build();
+        }
+
+        private CorsConfigurationSource corsConfigurationSource() {
+                return request -> {
+                        CorsConfiguration config = new CorsConfiguration();
+                        config.addAllowedOriginPattern("*");
+                        // config.setAllowedOrigins(List.of("http://localhost:3000"));
+                        config.setAllowCredentials(true);
+                        config.setAllowedHeaders(Collections.singletonList("*"));
+                        config.setExposedHeaders(Arrays.asList("Authorization"));
+                        config.setMaxAge(3600L);
+                        return config;
+                };
+        }
+
+        @Bean
+        PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        ObjectMapper objectMapper() {
+                return new ObjectMapper();
+        }
+
+        @Bean
+        RequestLoggingFilter requestLoggingFilter() {
+                return new RequestLoggingFilter();
+        }
+
+        @Bean
+        JwtTokenValidator jwtTokenValidator() {
+                return new JwtTokenValidator();
+        }
+
+        @Bean
+        @Primary
+        PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+                return new JpaTransactionManager(entityManagerFactory);
+        }
 }

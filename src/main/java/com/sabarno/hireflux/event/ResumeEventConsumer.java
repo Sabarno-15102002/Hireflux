@@ -2,6 +2,9 @@ package com.sabarno.hireflux.event;
 
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.dto.event.ResumeUploadedEvent;
@@ -21,6 +24,16 @@ public class ResumeEventConsumer {
 
     private final MetricsService metricsService;
 
+    @RetryableTopic(
+        attempts = "3",
+        backoff = @Backoff(
+            delay = 2000,
+            multiplier = 2.0,
+            maxDelay = 10000
+        ),
+        dltStrategy = DltStrategy.ALWAYS_RETRY_ON_ERROR,
+        exclude = NonRetryableProcessingException.class
+    )
     @KafkaListener(
             topics = "${kafka.topic.resume-uploaded.name}",
             groupId = "${spring.kafka.consumer.group-id}"

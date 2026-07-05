@@ -55,24 +55,4 @@ public class KafkaConfig {
                 .replicas(TOPIC_REPLICATION_FACTOR)
                 .build();
     }
-
-    @Bean
-    RetryTopicConfiguration retryTopicConfiguration(
-        KafkaTemplate<String, Object> kafkaTemplate
-    ) {
-        return RetryTopicConfigurationBuilder
-            .newInstance()
-            // retry 3 times
-            .maxAttempts(3)
-            // exponential backoff
-            .exponentialBackoff(
-                    2000,   // initial delay
-                    2.0,    // multiplier
-                    10000   // max delay
-            )
-            .retryTopicSuffix("-retry")
-            .dltSuffix("-dlt")
-            .notRetryOn(NonRetryableProcessingException.class)
-            .create(kafkaTemplate);
-    }
 }

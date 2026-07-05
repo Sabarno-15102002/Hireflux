@@ -41,6 +41,11 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     """)
     void rejectAllByJobId(UUID jobId);
 
+    @EntityGraph(attributePaths = { "applicant", "job", "resume" })
+    @Query("""
+        SELECT ja
+        FROM JobApplication ja
+    """)
     Page<ApplicationSummary> findAllApplications(Pageable pageable);
 
 }

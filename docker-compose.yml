@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
 
   # =========================
@@ -165,12 +163,14 @@ services:
 
     volumes:
       - kafka-data:/var/lib/kafka/data
+    networks:
+      - hireflux-network
 
   # =========================
   # Elasticsearch
   # =========================
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.8
     container_name: hireflux-elasticsearch
 
     environment:
@@ -197,7 +197,7 @@ services:
   # Kibana
   # =========================
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.13.4
+    image: docker.elastic.co/kibana/kibana:8.18.8
     container_name: hireflux-kibana
 
     depends_on:
@@ -224,7 +224,7 @@ services:
       - "9090:9090"
 
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus.yml
 
     networks:
       - hireflux-network
@@ -261,5 +261,6 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  kafka-data:
   elasticsearch_data:
   grafana_data:

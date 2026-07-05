@@ -17,7 +17,7 @@ public class ResumeEventProducer {
     @Value("${kafka.topic.resume-uploaded.name}")
     private String resumeUploadTopicName;
 
-    private final KafkaTemplate<String, ResumeUploadedEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void publishResumeUploaded(UUID resumeId, String fileKey) {
         ResumeUploadedEvent event = new ResumeUploadedEvent(resumeId, fileKey);

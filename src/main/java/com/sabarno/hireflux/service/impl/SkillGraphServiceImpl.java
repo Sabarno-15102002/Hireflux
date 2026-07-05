@@ -91,10 +91,12 @@ public class SkillGraphServiceImpl implements SkillGraphService {
     private void saveWithRetry(SkillEdge edge) {
 
         int maxRetries = 3;
+        String key = edge.getSkillA() + "|" + edge.getSkillB();
 
         for (int i = 0; i < maxRetries; i++) {
             try {
-                repository.save(edge);
+                SkillEdge saved = repository.save(edge);
+                edgeStore.put(key, saved);
                 return;
             } catch (ObjectOptimisticLockingFailureException ex) {
 
