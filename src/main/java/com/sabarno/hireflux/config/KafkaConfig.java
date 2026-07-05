@@ -9,11 +9,7 @@ import org.springframework.kafka.annotation.EnableKafkaRetryTopic;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.retrytopic.RetryTopicConfiguration;
-import org.springframework.kafka.retrytopic.RetryTopicConfigurationBuilder;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
-
-import com.sabarno.hireflux.exception.NonRetryableProcessingException;
 
 
 @Configuration

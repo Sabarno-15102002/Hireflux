@@ -4,7 +4,7 @@ services:
   # HireFlux Spring Boot App
   # =========================
   hireflux-app:
-    image: sabarnobiswas2002/hireflux:v0.0.1-SNAPSHOT
+    image: sabarnobiswas2002/hireflux:v0.0.2-SNAPSHOT
     container_name: hireflux-app
 
     ports:
@@ -82,6 +82,17 @@ services:
       # =========================
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      # =========================
+      # OPENAI
+      # =========================
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # =========================
+      # ADMINSEEDER
+      # =========================
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
 
     networks:
       - hireflux-network
