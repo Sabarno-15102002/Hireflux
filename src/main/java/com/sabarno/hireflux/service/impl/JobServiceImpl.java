@@ -3,7 +3,6 @@ package com.sabarno.hireflux.service.impl;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -15,6 +14,7 @@ import com.sabarno.hireflux.dto.request.JobRequest;
 import com.sabarno.hireflux.dto.response.JobResponse;
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.repository.JobApplicationRepository;
@@ -125,8 +125,16 @@ public class JobServiceImpl implements JobService {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
 
-        if (user.getRole() != UserRole.RECRUITER && user.getRole() != UserRole.ADMIN || !job.getPostedBy().getId().equals(user.getId())) {
+        if (user.getRole() != UserRole.RECRUITER && user.getRole() != UserRole.ADMIN) {
             throw new UnauthorizedException("Only the recruiter who posted the job can remove it");
+        }
+
+        if(user.getRole() == UserRole.RECRUITER && !job.getPostedBy().getId().equals(user.getId())){
+            throw new UnauthorizedException("Only the recruiter who posted the job can remove it");
+        }
+
+        if (job.getStatus() == JobStatus.CLOSED) {
+            throw new BadRequestException("Job is already closed");
         }
 
         job.setStatus(JobStatus.CLOSED);

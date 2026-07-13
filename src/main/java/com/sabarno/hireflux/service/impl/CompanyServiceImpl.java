@@ -10,6 +10,7 @@ import com.sabarno.hireflux.dto.request.CompanyRequest;
 import com.sabarno.hireflux.dto.response.CompanyResponse;
 import com.sabarno.hireflux.entity.Company;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
 import com.sabarno.hireflux.repository.CompanyRepository;
 import com.sabarno.hireflux.repository.UserRepository;
@@ -54,7 +55,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyResponse getCompany(UUID id) {
         Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
 
         return mapToResponse(company);
     }

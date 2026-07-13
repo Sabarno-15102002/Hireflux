@@ -141,24 +141,10 @@ public class AdminServiceImpl implements AdminService{
                         )
                 );
 
-        UserRole role;
+        UserRole role = UserRole.valueOf(newRole);
 
-        try {
-            role = UserRole.valueOf(newRole);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException(
-                    "Invalid role: " + newRole
-            );
-        }
-
-        if (role == UserRole.ADMIN || role == UserRole.RECRUITER || role == UserRole.CANDIDATE) {
-            user.setRole(role);
-            userRepository.save(user);
-        } else {
-            throw new BadRequestException(
-                    "Invalid role: " + newRole
-            );
-        }
+        user.setRole(role);
+        userRepository.save(user);
     }
 
     @Override

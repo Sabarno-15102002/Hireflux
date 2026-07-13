@@ -20,6 +20,8 @@ public class MetricsServiceImpl implements MetricsService {
 
     private static final String DLQ_KEY = "metrics:kafka:resume:dlq";
 
+    private static final String PROCESSING_TIMES_KEY = "metrics:kafka:resume:processing-times";
+
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
@@ -46,7 +48,7 @@ public class MetricsServiceImpl implements MetricsService {
     public void recordResumeProcessingTime(long ms) {
 
         redisTemplate.opsForList().rightPush(
-                "metrics:kafka:resume:processing-times",
+                PROCESSING_TIMES_KEY,
                 String.valueOf(ms)
         );
     }

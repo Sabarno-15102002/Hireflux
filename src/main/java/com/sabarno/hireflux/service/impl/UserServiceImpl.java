@@ -81,7 +81,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public void saveJob(UUID jobId, User user) {
+    public SavedJob saveJob(UUID jobId, User user) {
         Job job = jobRepository.findById(jobId).orElseThrow(() -> new ResourceNotFoundException("No job found with the ID:" + jobId));
 
         SavedJob savedJob = new SavedJob();
@@ -89,19 +89,17 @@ public class UserServiceImpl implements UserService{
         savedJob.setJob(job);
         savedJob.setSavedAt(LocalDateTime.now());
 
-        savedJobRepository.save(savedJob);
+        return savedJobRepository.save(savedJob);
     }
 
     @Cacheable(value = "users", key = "#userId")
     @Override
     public UserSummary getProfile(UUID userId) {
-        return userRepository.findProfileById(userId).orElseThrow(() -> new ResourceNotFoundException("No User found"));
+        return userRepository.findProfileById(userId).orElseThrow(() -> new ResourceNotFoundException("No profile found with the ID:" + userId));
     }
 
     @Override
     public Page<UserSummary> getAllUsers(Pageable pageable) {
         return userRepository.findAllProjectedBy(pageable);
     }
-
-    
 }
