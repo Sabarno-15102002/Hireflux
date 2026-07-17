@@ -190,7 +190,7 @@ public class ResumeServiceImpl implements ResumeService {
             Tika tika = new Tika();
             String text = tika.parseToString(inputStream);
 
-            if (text == null || text.isBlank()) {
+            if (text.isBlank()) {
                 throw new NonRetryableProcessingException("Extracted resume content is empty");
             }
 

@@ -167,9 +167,7 @@ public class SkillGraphServiceImpl implements SkillGraphService {
 
             for (String key : dirtyKeys) {
                 SkillEdge edge = edgeStore.get(key);
-                if (edge != null) {
                     batch.add(edge);
-                }
             }
 
             for (SkillEdge edge : batch) {
