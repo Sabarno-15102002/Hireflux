@@ -1,12 +1,12 @@
 package com.sabarno.hireflux.service.util;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
+import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.repository.JobApplicationRepository;
 import com.sabarno.hireflux.service.matching.JobMatchingEngine;
 import com.sabarno.hireflux.service.matching.MatchContext;

@@ -3,7 +3,6 @@ package com.sabarno.hireflux.service.impl;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,6 +12,7 @@ import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.User;
+import com.sabarno.hireflux.exception.impl.BadRequestException;
 import com.sabarno.hireflux.exception.impl.ConflictException;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
 import com.sabarno.hireflux.exception.impl.UnauthorizedException;
