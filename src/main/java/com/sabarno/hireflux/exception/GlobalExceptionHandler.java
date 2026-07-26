@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
         errorDetail.setMessage(ex.getMessage());
         errorDetail.setTimestamp(LocalDateTime.now());
         meterRegistry.counter("exceptions.unauthorized").increment();
-        return ResponseEntity.status(403).body(errorDetail);
+        return ResponseEntity.status(401).body(errorDetail);
     }
 
     @ExceptionHandler(ConflictException.class)

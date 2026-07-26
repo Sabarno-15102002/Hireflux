@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import com.sabarno.hireflux.dto.event.ResumeUploadedEvent;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class ResumeEventProducer {
 
@@ -21,6 +23,14 @@ public class ResumeEventProducer {
 
     public void publishResumeUploaded(UUID resumeId, String fileKey) {
         ResumeUploadedEvent event = new ResumeUploadedEvent(resumeId, fileKey);
-        kafkaTemplate.send(resumeUploadTopicName, resumeId.toString(), event);
+        kafkaTemplate.send(resumeUploadTopicName, resumeId.toString(), event)
+            .whenComplete((result, ex) -> {
+                if (ex != null) {
+                    log.error("event=publish_resume_uploaded_failed, resume_id={}", resumeId, ex);
+                } else {
+                    log.info("event=publish_resume_uploaded, resume_id={}, partition={}",
+                            resumeId, result.getRecordMetadata().partition());
+                }
+            });
     }
 }

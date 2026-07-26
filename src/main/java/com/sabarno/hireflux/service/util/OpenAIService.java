@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.sabarno.hireflux.exception.impl.BadRequestException;
+import com.sabarno.hireflux.exception.impl.OpenAIException;
 
 @Service
 public class OpenAIService {
@@ -26,7 +26,7 @@ public class OpenAIService {
         int end = response.lastIndexOf("}");
 
         if (start == -1 || end == -1 || start > end) {
-            throw new BadRequestException("Invalid JSON from AI");
+            throw new OpenAIException("Invalid JSON from AI");
         }
 
         return response.substring(start, end + 1);

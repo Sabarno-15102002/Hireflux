@@ -3,7 +3,7 @@ package com.sabarno.hireflux.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.coyote.BadRequestException;
+import com.sabarno.hireflux.exception.impl.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;

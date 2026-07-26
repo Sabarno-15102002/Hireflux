@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
 
+import com.sabarno.hireflux.exception.impl.BadRequestException;
+
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 
@@ -19,7 +21,7 @@ public class RateLimitService {
             long capacity,
             Duration duration
     ) {
-
+        if(capacity <= 0) throw new BadRequestException("Capacity must be positive");
         return cache.computeIfAbsent(
                 key,
                 k -> createBucket(capacity, duration)
