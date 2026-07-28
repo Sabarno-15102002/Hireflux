@@ -114,7 +114,7 @@ public class AdminController {
         if(newRole == null || newRole.isEmpty()) {
             return ResponseEntity.badRequest().body(new AppResponse("New role must be provided"));
         }
-        if(newRole != null && !newRole.equalsIgnoreCase("ADMIN") && !newRole.equalsIgnoreCase("RECRUITER") && !newRole.equalsIgnoreCase("CANDIDATE")) {
+        if(!newRole.equalsIgnoreCase("ADMIN") && !newRole.equalsIgnoreCase("RECRUITER") && !newRole.equalsIgnoreCase("CANDIDATE")) {
             return ResponseEntity.badRequest().body(new AppResponse("Invalid role: " + newRole));
         }
         adminService.updateUserRole(userId, newRole);
