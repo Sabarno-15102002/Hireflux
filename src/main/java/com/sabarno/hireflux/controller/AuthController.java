@@ -65,9 +65,13 @@ public class AuthController {
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns a JWT token upon successful registration")
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> createUserHandler(@RequestBody RegisterRequest user) {
+        if(user.getRole() == UserRole.ADMIN){
+            throw new BadRequestException("Cannot assign ADMIN role during registration");
+        } 
         String email = user.getEmail();
         String name = user.getName();
         String password = user.getPassword();
+        
 
         User existingUser = userService.findUserByEmail(email);
         if (existingUser != null) {
@@ -81,12 +85,9 @@ public class AuthController {
         newUser.setName(name);
         newUser.setPassword(passwordEncoder.encode(password));
         newUser.setAuthProvider(AuthProvider.EMAIL);
-        if(newUser.getRole() == null) {
+        if(user.getRole() == null) {
             newUser.setRole(UserRole.CANDIDATE); // Default role
         }
-        else if(newUser.getRole() == UserRole.ADMIN){
-            throw new BadRequestException("Cannot assign ADMIN role during registration");
-        } 
         else{
             newUser.setRole(user.getRole());
         }

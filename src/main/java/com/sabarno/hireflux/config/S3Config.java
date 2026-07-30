@@ -3,6 +3,7 @@ package com.sabarno.hireflux.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -12,18 +13,25 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 public class S3Config {
 
     @Bean
-    S3Client s3Client() {
+    S3Client s3Client(AwsCredentialsProvider credentialsProvider) {
         return S3Client.builder()
                 .region(Region.US_EAST_1)
-                .credentialsProvider(ProfileCredentialsProvider.create())
+                .credentialsProvider(credentialsProvider)
                 .build();
     }
 
+
     @Bean
-    S3Presigner s3Presigner() {
+    S3Presigner s3Presigner(AwsCredentialsProvider credentialsProvider) {
         return S3Presigner.builder()
                 .region(Region.US_EAST_1)
-                .credentialsProvider(ProfileCredentialsProvider.create())
+                .credentialsProvider(credentialsProvider)
                 .build();
+    }
+
+
+    @Bean
+    AwsCredentialsProvider credentialsProvider() {
+        return ProfileCredentialsProvider.create();
     }
 }
