@@ -1,0 +1,47 @@
+name: Build & Push Docker Image
+
+on:
+  workflow_run:
+    workflows: ["HireFlux CI"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Make Maven Wrapper Executable
+        run: chmod +x mvnw
+
+      - name: Read project version
+        run: |
+          echo "APP_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & Push Docker Image
+        run: |
+          ./mvnw jib:build \
+            -Djib.to.image=sabarnobiswas2002/hireflux \
+            -Djib.to.auth.username=${{ secrets.DOCKER_USERNAME }} \
+            -Djib.to.auth.password=${{ secrets.DOCKER_PASSWORD }} \
+            -Djib.to.tags=latest,${APP_VERSION},${GITHUB_SHA::7}
