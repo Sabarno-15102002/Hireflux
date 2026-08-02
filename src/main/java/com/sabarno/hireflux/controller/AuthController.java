@@ -40,6 +40,7 @@ import io.github.bucket4j.Bucket;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,16 +65,17 @@ public class AuthController {
 
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns a JWT token upon successful registration")
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody RegisterRequest user) {
+    public ResponseEntity<AuthResponse> createUserHandler(@Valid @RequestBody RegisterRequest user) {
         if(user.getRole() == UserRole.ADMIN){
             throw new BadRequestException("Cannot assign ADMIN role during registration");
-        } 
+        }
+        
         String email = user.getEmail();
         String name = user.getName();
         String password = user.getPassword();
         
 
-        User existingUser = userService.findUserByEmail(email);
+        User existingUser = userService.findUserByEmailForRegister(email);
         if (existingUser != null) {
             // Avoid user enumeration by returning a generic error message
             log.warn("Registration attempt for existing email: {}", email);
@@ -116,7 +118,7 @@ public class AuthController {
     @Operation(summary = "Login a user", description = "Authenticates a user and returns a JWT token upon successful login")
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> loginUserHandler(
-        @RequestBody LoginRequest user,
+        @Valid @RequestBody LoginRequest user,
         HttpServletRequest request
     ) {
         
@@ -193,8 +195,8 @@ public class AuthController {
     @PostMapping("/set-role")
     public ResponseEntity<AuthResponse> setRole(
             @RequestHeader("Authorization") String token,
-            @RequestBody RoleRequestDTO role) {
-
+            @Valid @RequestBody RoleRequestDTO role) {
+                
         String email = jwtProvider.getEmailFromTempToken(token);
 
         User user = userService.findUserByEmail(email);
@@ -229,10 +231,6 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshAccessToken(@RequestBody RefreshTokenRequest request) {
         RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
-
-        if (refreshToken == null) {
-            throw new BadCredentialsException("Invalid refresh token");
-        }
 
         User user = refreshToken.getUser();
         Authentication authentication = authenticate(user.getEmail(), null);

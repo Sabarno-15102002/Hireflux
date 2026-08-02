@@ -7,9 +7,9 @@ import lombok.Data;
 @Data
 public class UploadDTO {
 
-    @NotBlank
+    @NotBlank(message = "File key cannot be blank")
     private String fileKey;
 
-    @NotBlank
+    @NotBlank(message = "File name cannot be blank")
     private String fileName;
 }

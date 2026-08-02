@@ -11,17 +11,22 @@ import lombok.Data;
 @Data
 public class JobRequest {
 
-    @NotBlank
+    @NotBlank(message = "Job title is required")
     private String title;
 
-    @NotBlank
+    @NotBlank(message = "Job description is required")
     private String description;
 
-    @NotBlank
+    @NotBlank(message = "Job location is required")
     private String location;
+
+    @NotBlank(message = "Job type is required")
     private JobType jobType;
+
     private Integer minExperienceRequired;
     private Integer maxExperienceRequired;
     private List<String> requiredSkills;
+
+    @NotBlank(message = "Company is required")
     private Company company;
 }

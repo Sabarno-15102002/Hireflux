@@ -43,6 +43,11 @@ public class UserServiceImpl implements UserService{
         return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("No user found with the email:" + email));
     }
 
+    @Override
+    public User findUserByEmailForRegister(String email) {
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
     @CachePut(value = "users", key = "#email")
     @Override
     public User createOAuthUser(String email, String name, String profilePicture) {

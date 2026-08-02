@@ -20,6 +20,7 @@ import com.sabarno.hireflux.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -42,7 +43,7 @@ public class CompanyController {
     @Operation(summary = "Create a new company", description = "Creates a new company profile. Requires authentication.")
     @PostMapping
     public ResponseEntity<CompanyResponse> createCompany(
-        @RequestBody CompanyRequest request) {
+        @Valid @RequestBody CompanyRequest request) {
         User user = getCurrentUser();
         return ResponseEntity.ok(companyService.createCompany(request, user));
     }

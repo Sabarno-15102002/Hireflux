@@ -5,13 +5,14 @@ import lombok.Data;
 
 @Data
 public class CompleteInviteRequest {
-    @NotBlank
+    
+    @NotBlank(message = "Token is required")
     private String token;
 
-    @NotBlank
+    @NotBlank(message = "Name is required")
     private String name;
 
-    @NotBlank
+    @NotBlank(message = "Password is required")
     private String password;
 
 }

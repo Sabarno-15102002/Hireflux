@@ -21,4 +21,5 @@ public interface UserService {
     SavedJob saveJob(UUID jobId, User user);
     UserSummary getProfile(UUID userId);
     Page<UserSummary> getAllUsers(Pageable pageable);
+    User findUserByEmailForRegister(String email);
 }

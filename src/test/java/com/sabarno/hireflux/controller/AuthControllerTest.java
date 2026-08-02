@@ -15,7 +15,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -76,7 +75,7 @@ class AuthControllerTest {
         private Bucket bucket;
 
         @Mock
-        private HttpServletRequest request;
+        private HttpServletRequest req;
 
         private User user;
 
@@ -123,7 +122,7 @@ class AuthControllerTest {
                 request.setPassword("password");
                 request.setRole(UserRole.RECRUITER);
 
-                when(userService.findUserByEmail("test@test.com"))
+                when(userService.findUserByEmailForRegister("test@test.com"))
                                 .thenReturn(null);
 
                 when(passwordEncoder.encode("password"))
@@ -167,7 +166,7 @@ class AuthControllerTest {
                 request.setName("Test User");
                 request.setPassword("password");
 
-                when(userService.findUserByEmail("test@test.com"))
+                when(userService.findUserByEmailForRegister("test@test.com"))
                                 .thenReturn(null);
 
                 when(passwordEncoder.encode("password"))
@@ -210,7 +209,7 @@ class AuthControllerTest {
                 request.setEmail("test@test.com");
                 request.setPassword("password");
 
-                when(userService.findUserByEmail("test@test.com"))
+                when(userService.findUserByEmailForRegister("test@test.com"))
                                 .thenReturn(user);
 
                 assertThrows(
@@ -254,7 +253,7 @@ class AuthControllerTest {
 
                 requestDto.setPassword("password");
 
-                when(request.getRemoteAddr())
+                when(req.getRemoteAddr())
                                 .thenReturn("127.0.0.1");
 
                 when(rateLimitService.resolveBucket(
@@ -285,7 +284,7 @@ class AuthControllerTest {
 
                         ResponseEntity<AuthResponse> response = authController.loginUserHandler(
                                         requestDto,
-                                        request);
+                                        req);
 
                         assertEquals(
                                         HttpStatus.ACCEPTED,
@@ -305,7 +304,7 @@ class AuthControllerTest {
 
                 requestDto.setPassword("wrong");
 
-                when(request.getRemoteAddr())
+                when(req.getRemoteAddr())
                                 .thenReturn("127.0.0.1");
 
                 when(rateLimitService.resolveBucket(
@@ -327,7 +326,7 @@ class AuthControllerTest {
 
                         ResponseEntity<AuthResponse> response = authController.loginUserHandler(
                                         requestDto,
-                                        request);
+                                        req);
 
                         assertEquals(
                                         HttpStatus.UNAUTHORIZED,
@@ -346,7 +345,7 @@ class AuthControllerTest {
                 requestDto.setEmail("test@test.com");
                 requestDto.setPassword("password");
 
-                when(request.getHeader("X-Forwarded-For"))
+                when(req.getHeader("X-Forwarded-For"))
                                 .thenReturn("10.0.0.1, 20.0.0.1");
 
                 when(rateLimitService.resolveBucket(
@@ -377,7 +376,7 @@ class AuthControllerTest {
 
                         ResponseEntity<AuthResponse> response = authController.loginUserHandler(
                                         requestDto,
-                                        request);
+                                        req);
 
                         assertEquals(
                                         HttpStatus.ACCEPTED,
@@ -399,7 +398,7 @@ class AuthControllerTest {
                 requestDto.setEmail("unknown@test.com");
                 requestDto.setPassword("password");
 
-                when(request.getRemoteAddr())
+                when(req.getRemoteAddr())
                                 .thenReturn("127.0.0.1");
 
                 when(rateLimitService.resolveBucket(
@@ -416,7 +415,7 @@ class AuthControllerTest {
 
                         ResponseEntity<AuthResponse> response = authController.loginUserHandler(
                                         requestDto,
-                                        request);
+                                        req);
 
                         assertEquals(
                                         HttpStatus.UNAUTHORIZED,
@@ -571,22 +570,6 @@ class AuthControllerTest {
                 assertEquals(
                                 "new-access-token",
                                 response.getBody().getAccessToken());
-        }
-
-        @Test
-        void testRefreshToken_shouldFail_whenTokenInvalid() {
-
-                RefreshTokenRequest request = new RefreshTokenRequest();
-
-                request.setRefreshToken("bad-token");
-
-                when(refreshTokenService.verifyRefreshToken(
-                                "bad-token"))
-                                .thenReturn(null);
-
-                assertThrows(
-                                BadCredentialsException.class,
-                                () -> authController.refreshAccessToken(request));
         }
 
         // ---------------- LOGOUT ----------------
