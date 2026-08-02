@@ -53,4 +53,11 @@ public class UserController {
         UserSummary profile = userService.getProfile(user.getId());
         return ResponseEntity.ok(profile);
     }
+
+    @PostMapping("/set-company/{companyId}")
+    public ResponseEntity<UserSummary> setCompanyForUser(@PathVariable UUID companyId){
+        User user = getCurrentUser();
+        UserSummary updatedProfile = userService.setCompanyForUser(user.getId(), companyId);
+        return ResponseEntity.ok(updatedProfile);
+    }
 }

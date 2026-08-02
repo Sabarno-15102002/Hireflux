@@ -22,4 +22,5 @@ public interface UserService {
     UserSummary getProfile(UUID userId);
     Page<UserSummary> getAllUsers(Pageable pageable);
     User findUserByEmailForRegister(String email);
+    UserSummary setCompanyForUser(UUID id, UUID companyId);
 }

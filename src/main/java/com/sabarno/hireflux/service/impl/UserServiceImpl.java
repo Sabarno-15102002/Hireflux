@@ -16,6 +16,7 @@ import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.SavedJob;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
+import com.sabarno.hireflux.repository.CompanyRepository;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.repository.SavedJobRepository;
 import com.sabarno.hireflux.repository.UserRepository;
@@ -36,6 +37,8 @@ public class UserServiceImpl implements UserService{
     private final JwtProvider jwtProvider;
 
     private final JobRepository jobRepository;
+
+    private final CompanyRepository companyRepository;
 
     @Cacheable(value = "users", key = "#email")
     @Override
@@ -106,5 +109,13 @@ public class UserServiceImpl implements UserService{
     @Override
     public Page<UserSummary> getAllUsers(Pageable pageable) {
         return userRepository.findAllProjectedBy(pageable);
+    }
+
+    @Override
+    public UserSummary setCompanyForUser(UUID id, UUID companyId) {
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No user found with the ID:" + id));
+        user.setCompany(companyRepository.findById(companyId).orElseThrow(() -> new ResourceNotFoundException("No company found with the ID:" + companyId)));
+        userRepository.save(user);
+        return userRepository.findProfileById(id).orElseThrow(() -> new ResourceNotFoundException("No profile found with the ID:" + id));
     }
 }

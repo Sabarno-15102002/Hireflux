@@ -26,7 +26,4 @@ public class JobRequest {
     private Integer minExperienceRequired;
     private Integer maxExperienceRequired;
     private List<String> requiredSkills;
-
-    @NotBlank(message = "Company is required")
-    private Company company;
 }
