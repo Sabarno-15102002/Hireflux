@@ -1,6 +1,9 @@
 package com.sabarno.hireflux.service;
 
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,12 +26,14 @@ import org.springframework.data.domain.Pageable;
 
 
 import com.sabarno.hireflux.config.JwtProvider;
+import com.sabarno.hireflux.entity.Company;
 import com.sabarno.hireflux.entity.Job;
 import com.sabarno.hireflux.entity.JobApplication;
 import com.sabarno.hireflux.entity.Resume;
 import com.sabarno.hireflux.entity.SavedJob;
 import com.sabarno.hireflux.entity.User;
 import com.sabarno.hireflux.exception.impl.ResourceNotFoundException;
+import com.sabarno.hireflux.repository.CompanyRepository;
 import com.sabarno.hireflux.repository.JobRepository;
 import com.sabarno.hireflux.repository.SavedJobRepository;
 import com.sabarno.hireflux.repository.UserRepository;
@@ -54,6 +59,9 @@ class UserServiceImplTest {
 
     @Mock
     private JwtProvider jwtProvider;
+
+    @Mock
+    private CompanyRepository companyRepository;
     
     @Test
     void testCreateOAuthUser() {
@@ -68,7 +76,7 @@ class UserServiceImplTest {
         expectedUser.setProfilePicture(profilePicture);
         expectedUser.setAuthProvider(AuthProvider.GOOGLE);
 
-        Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(expectedUser);
+        when(userRepository.save(Mockito.any(User.class))).thenReturn(expectedUser);
         User actualUser = userService.createOAuthUser(email, name, profilePicture);
         Assertions.assertNotNull(actualUser);
         Assertions.assertEquals(expectedUser.getEmail(), actualUser.getEmail());
@@ -87,7 +95,7 @@ class UserServiceImplTest {
         user.setProfilePicture("https://example.com/profile.jpg");
         user.setAuthProvider(AuthProvider.LOCAL);
 
-        Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
+        when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
         User actualUser = userService.createUser(user);
         Assertions.assertNotNull(actualUser);
         Assertions.assertEquals(user.getEmail(), actualUser.getEmail());
@@ -99,11 +107,11 @@ class UserServiceImplTest {
 
     @Test
     void testAddResume(){
-        Resume resume = Mockito.mock(Resume.class);
-        User user = Mockito.mock(User.class);
-        Mockito.when(resume.getUser()).thenReturn(user);
-        Mockito.when(user.getResumes()).thenReturn(new java.util.ArrayList<>());
-        Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
+        Resume resume = mock(Resume.class);
+        User user = mock(User.class);
+        when(resume.getUser()).thenReturn(user);
+        when(user.getResumes()).thenReturn(new java.util.ArrayList<>());
+        when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
         User actualUser = userService.addResume(resume);
         Assertions.assertNotNull(actualUser);
         Assertions.assertTrue(actualUser.getResumes().contains(resume));
@@ -113,11 +121,11 @@ class UserServiceImplTest {
 
     @Test
     void testAddApplication(){
-        JobApplication application = Mockito.mock(JobApplication.class);
-        User user = Mockito.mock(User.class);
-        Mockito.when(application.getApplicant()).thenReturn(user);
-        Mockito.when(user.getApplications()).thenReturn(new java.util.ArrayList<>());
-        Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
+        JobApplication application = mock(JobApplication.class);
+        User user = mock(User.class);
+        when(application.getApplicant()).thenReturn(user);
+        when(user.getApplications()).thenReturn(new java.util.ArrayList<>());
+        when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
         User actualUser = userService.addApplication(application);
         Assertions.assertNotNull(actualUser);
         Assertions.assertTrue(actualUser.getApplications().contains(application));
@@ -127,17 +135,17 @@ class UserServiceImplTest {
 
     @Test
     void testSaveJobPositive(){
-        User user = Mockito.mock(User.class);
+        User user = mock(User.class);
         UUID jobId = UUID.randomUUID();
-        Job job = Mockito.mock(Job.class);
-        SavedJob savedJob = Mockito.mock(SavedJob.class);
+        Job job = mock(Job.class);
+        SavedJob savedJob = mock(SavedJob.class);
 
-        Mockito.when(savedJob.getUser()).thenReturn(user);
-        Mockito.when(job.getId()).thenReturn(jobId);
-        Mockito.when(user.getName()).thenReturn("John Doe");
-        Mockito.when(savedJob.getJob()).thenReturn(job);
-        Mockito.when(savedJobRepository.save(Mockito.any(SavedJob.class))).thenReturn(savedJob);
-        Mockito.when(jobRepository.findById(jobId)).thenReturn(Optional.of(job));
+        when(savedJob.getUser()).thenReturn(user);
+        when(job.getId()).thenReturn(jobId);
+        when(user.getName()).thenReturn("John Doe");
+        when(savedJob.getJob()).thenReturn(job);
+        when(savedJobRepository.save(Mockito.any(SavedJob.class))).thenReturn(savedJob);
+        when(jobRepository.findById(jobId)).thenReturn(Optional.of(job));
 
         SavedJob expectedSavedJob = userService.saveJob(jobId, user);
         Assertions.assertNotNull(expectedSavedJob);
@@ -152,8 +160,8 @@ class UserServiceImplTest {
     @Test
     void testSaveJobNegative(){
         UUID jobId = UUID.randomUUID();
-        User user = Mockito.mock(User.class);
-        Mockito.when(jobRepository.findById(jobId)).thenReturn(Optional.empty());
+        User user = mock(User.class);
+        when(jobRepository.findById(jobId)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = Assertions.assertThrows(ResourceNotFoundException.class, () -> {
             userService.saveJob(jobId, user);
@@ -166,8 +174,8 @@ class UserServiceImplTest {
     @Test
     void testGetProfilePositive(){
         UUID userId = UUID.randomUUID();
-        UserSummary userSummary = Mockito.mock(UserSummary.class);
-        Mockito.when(userRepository.findProfileById(userId)).thenReturn(Optional.of(userSummary));
+        UserSummary userSummary = mock(UserSummary.class);
+        when(userRepository.findProfileById(userId)).thenReturn(Optional.of(userSummary));
 
         UserSummary actualUserSummary = userService.getProfile(userId);
         Assertions.assertNotNull(actualUserSummary);
@@ -178,7 +186,7 @@ class UserServiceImplTest {
     @Test
     void testGetProfileNegative(){
         UUID userId = UUID.randomUUID();
-        Mockito.when(userRepository.findProfileById(userId)).thenReturn(Optional.empty());
+        when(userRepository.findProfileById(userId)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = Assertions.assertThrows(ResourceNotFoundException.class, () -> {
             userService.getProfile(userId);
@@ -191,8 +199,8 @@ class UserServiceImplTest {
     @Test
     void testFindUserByEmailPositive() {
         String email = "john.doe@example.com";
-        User user = Mockito.mock(User.class);
-        Mockito.when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        User user = mock(User.class);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
 
         User actualUser = userService.findUserByEmail(email);
         Assertions.assertNotNull(actualUser);
@@ -203,7 +211,7 @@ class UserServiceImplTest {
     @Test
     void testFindUserByEmailNegative() {
         String email = "john.doe@example.com";
-        Mockito.when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = Assertions.assertThrows(ResourceNotFoundException.class, () -> {
             userService.findUserByEmail(email);
@@ -217,9 +225,9 @@ class UserServiceImplTest {
     void testFindUserFromTokenPositive() {
         String token = "valid-token";
         String email = "john.doe@example.com";
-        Mockito.when(jwtProvider.getEmailFromJwtToken(token)).thenReturn(email);
-        User user = Mockito.mock(User.class);
-        Mockito.when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(jwtProvider.getEmailFromJwtToken(token)).thenReturn(email);
+        User user = mock(User.class);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
 
         User actualUser = userService.findUserFromToken(token);
         Assertions.assertNotNull(actualUser);
@@ -232,8 +240,8 @@ class UserServiceImplTest {
     void testFindUserFromTokenNegative() {
         String token = "invalid-token";
         String email = "john.doe@example.com";
-        Mockito.when(jwtProvider.getEmailFromJwtToken(token)).thenReturn(email);
-        Mockito.when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(jwtProvider.getEmailFromJwtToken(token)).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = Assertions.assertThrows(ResourceNotFoundException.class, () -> {
             userService.findUserFromToken(token);
@@ -265,5 +273,84 @@ class UserServiceImplTest {
         Assertions.assertEquals(expectedPage, result);
 
         verify(userRepository).findAllProjectedBy(pageable);
+    }
+
+    @Test
+    void testSetCompanyForUserPositive() {
+        UUID userId = UUID.randomUUID();
+        UUID companyId = UUID.randomUUID();
+
+        User user = mock(User.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        Company company = mock(Company.class);
+        when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
+
+        when(userRepository.save(user)).thenReturn(user);
+
+        UserSummary userSummary = mock(UserSummary.class);
+        when(userRepository.findProfileById(userId)).thenReturn(Optional.of(userSummary));
+
+        UserSummary actualUserSummary = userService.setCompanyForUser(userId, companyId);
+        assertNotNull(actualUserSummary);
+        assertEquals(userSummary, actualUserSummary);
+        verify(userRepository).findById(userId);
+        verify(companyRepository).findById(companyId);
+        verify(userRepository).findProfileById(userId);
+    }
+
+    @Test
+    void testSetCompanyForUserNegativeUserNotFound() {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            userService.setCompanyForUser(userId, UUID.randomUUID());
+        });
+
+        Assertions.assertEquals("No user found with the ID:" + userId, exception.getMessage());
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    void testSetCompanyForUserNegativeCompanyNotFound() {
+        UUID userId = UUID.randomUUID();
+        UUID companyId = UUID.randomUUID();
+
+        User user = mock(User.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(companyRepository.findById(companyId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            userService.setCompanyForUser(userId, companyId);
+        });
+
+        Assertions.assertEquals("No company found with the ID:" + companyId, exception.getMessage());
+        verify(userRepository).findById(userId);
+        verify(companyRepository).findById(companyId);
+    }
+
+    @Test
+    void testSetCompanyForUserNegativeProfileNotFound() {
+        UUID userId = UUID.randomUUID();
+        UUID companyId = UUID.randomUUID();
+
+        User user = mock(User.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        Company company = mock(Company.class);
+        when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
+
+        when(userRepository.save(user)).thenReturn(user);
+        when(userRepository.findProfileById(userId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            userService.setCompanyForUser(userId, companyId);
+        });
+
+        Assertions.assertEquals("No profile found with the ID:" + userId, exception.getMessage());
+        verify(userRepository).findById(userId);
+        verify(companyRepository).findById(companyId);
+        verify(userRepository).findProfileById(userId);
     }
 }
