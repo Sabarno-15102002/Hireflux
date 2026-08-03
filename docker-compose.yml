@@ -4,7 +4,7 @@ services:
   # HireFlux Spring Boot App
   # =========================
   hireflux-app:
-    image: sabarnobiswas2002/hireflux:1.0.1
+    image: sabarnobiswas2002/hireflux:1.0.2
     container_name: hireflux-app
 
     ports:

@@ -2,7 +2,6 @@ package com.sabarno.hireflux.dto.request;
 
 import java.util.List;
 
-import com.sabarno.hireflux.entity.Company;
 import com.sabarno.hireflux.utility.enums.JobType;
 
 import jakarta.validation.constraints.NotBlank;
